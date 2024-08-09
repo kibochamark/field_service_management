@@ -1,0 +1,282 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+//company users as well superadmin
+model User {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  username      String?  @unique
+  email         String   @unique
+  firstName     String?
+  lastName      String?
+  googleID      String?  @unique
+  appleID       String?  @unique
+  password      String?  @unique
+  salt          String?
+  profile       Profile?
+  enabled       Boolean  @default(true)
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  role          Role     @relation(fields: [roleId], references: [id])
+  roleId        String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  DispatcherJob Job[]    @relation(name: "dispatcher")
+
+  TechnicianJob Job[]     @relation(name: "technician")
+  Invoice       Invoice[]
+}
+
+//clients
+model Client {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  username  String?  @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  googleID  String?  @unique
+  appleID   String?  @unique
+  password  String?  @unique
+  salt      String?
+  profile   Profile?
+  enabled   Boolean  @default(true)
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Job     Job[]
+  Invoice Invoice[]
+}
+
+//compamny / business
+model Company {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  name         String  @unique
+  description  String
+  email        String  @unique
+  address      Address
+  poBox        String
+  addressline1 String
+  addressline2 String?
+  image        Photo?
+
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  users          User[]
+  enabled        Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  subscriptionId String       @db.ObjectId
+}
+
+// roles
+
+model Role {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  permissions Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User[]
+
+  Client Client[]
+}
+
+model Job {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  description  String
+  location     Address
+  status       JobStatus   @default(NOTASSIGNED)
+  dispatcher   User?       @relation(name: "dispatcher", fields: [dispatcherId], references: [id])
+  dispatcherId String?     @db.ObjectId
+  technician   User?       @relation(name: "technician", fields: [technicianId], references: [id])
+  technicianId String?     @db.ObjectId
+  client       Client      @relation(fields: [clientId], references: [id])
+  clientId     String      @db.ObjectId
+  jobschedule  JobSchedule
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Workflows Workflows[]
+  Invoice   Invoice[]
+}
+
+model SubscriptionPlan {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description Json
+  duration    PlanDuration @default(MONTHLY)
+  price       Float        @db.Double()
+  discount    Float        @db.Double()
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Subscription Subscription[]
+}
+
+model Subscription {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  startDate DateTime
+  endDate   DateTime
+  plan      SubscriptionPlan?  @relation(fields: [planId], references: [id])
+  planId    String?            @db.ObjectId
+  status    SubscriptionStatus @default(NOTPAID)
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Company   Company[]
+  Workflows Workflows[]
+  Invoice   Invoice[]
+}
+
+model Workflows {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  type           WorkFlowType   @default(JOB)
+  status         WorkFlowStatus @default(PENDING)
+  steps          WorkflowSteps
+  job            Job?           @relation(fields: [jobId], references: [id])
+  jobId          String?        @db.ObjectId
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?        @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//payment and invoice models
+model Invoice {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  type           WorkFlowType  @default(JOB)
+  client         Client        @relation(fields: [clientId], references: [id])
+  clientId       String        @db.ObjectId
+  job            Job?          @relation(fields: [jobId], references: [id])
+  jobId          String?       @db.ObjectId
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?       @db.ObjectId
+  technician     User?         @relation(fields: [technicianId], references: [id])
+  technicianId   String?       @db.ObjectId
+  payment        Payment?      @relation(fields: [paymentId], references: [id])
+  paymentId      String?       @db.ObjectId
+
+  subTotal    Float @default(0.00)
+  tax         Float @default(0.00)
+  totalAmount Float @default(0.00)
+
+  dueDate   DateTime
+  issueDate DateTime @default(now())
+
+  status InvoiceStatus @default(DRAFT)
+
+  notes String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  paymentMethod String
+  transactionId String
+  amount        Float    @default(0.00)
+  comments      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  Invoice Invoice[]
+}
+
+// ----------------------- composite models ---------------------
+// address
+type Address {
+  street    String
+  city      String
+  zip       String
+  otherinfo String?
+}
+
+//images
+type Photo {
+  height Int    @default(200)
+  width  Int    @default(100)
+  url    String
+}
+
+//profile
+type Profile {
+  address Address
+  phone   String
+  image   Photo?
+}
+
+type JobSchedule {
+  startDate  DateTime
+  endDate    DateTime
+  recurrence JobRecurrence @default(DAILY)
+}
+
+type WorkflowSteps {
+  name   String
+  status WorkFlowStatus @default(PENDING)
+}
+
+///// application  enums ---------------------------
+
+enum JobStatus {
+  NOTASSIGNED
+  NOTSTARTED
+  ONGOING
+  COMPLETED
+}
+
+enum JobRecurrence {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum PlanDuration {
+  YEARLY
+  MONTHLY
+  WEEKLY
+}
+
+enum SubscriptionStatus {
+  PAID
+  EXPIRED
+  NOTPAID
+}
+
+enum WorkFlowStatus {
+  PENDING
+  CREATED
+  COMPLETED
+  INPROGRESS
+}
+
+enum WorkFlowType {
+  JOB
+  SUBSCRIPTION
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  APPROVED
+  COMPLETED
+}
