@@ -7,6 +7,8 @@ import compression from "compression"
 import routes from "./routes"
 import prisma from "./utils/prismaConfig"
 import { GlobalError } from "./types/errorTypes"
+import session from "express-session"
+
 
 
 
@@ -48,6 +50,13 @@ app.use((error:GlobalError, req:express.Request, res:express.Response, next:expr
             message:error.message
         }).end()
 })
+
+app.use(session({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: true }
+  }))
 
 
 
