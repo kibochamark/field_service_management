@@ -15,11 +15,10 @@ datasource db {
 
 //company users as well superadmin
 model User {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  username      String?  @unique
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId  
   email         String   @unique
-  firstName     String?
-  lastName      String?
+  firstName     String
+  lastName      String
   googleID      String?  @unique
   appleID       String?  @unique
   password      String?  @unique
@@ -37,6 +36,23 @@ model User {
   TechnicianJob Job[]     @relation(name: "technician")
   Invoice       Invoice[]
 }
+// Super Admin
+model SuperAdmin {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId  
+  email     String   @unique
+  firstName String
+  lastName  String
+  googleID  String?  @unique
+  appleID   String?  @unique
+  password  String?  @unique
+  salt      String?
+  profile   Profile?
+  enabled   Boolean  @default(true)
+  role      Role     @relation(fields: [roleId], references: [id]) 
+  roleId    String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  }
 
 //clients
 model Client {
@@ -48,6 +64,8 @@ model Client {
   googleID  String?  @unique
   appleID   String?  @unique
   password  String?  @unique
+  company   Company  @relation(fields: [companyId], references: [id])
+  companyId  String  @db.ObjectId
   salt      String?
   profile   Profile?
   enabled   Boolean  @default(true)
@@ -65,6 +83,7 @@ model Company {
   id           String  @id @default(auto()) @map("_id") @db.ObjectId
   name         String  @unique
   description  String
+  companysize  CompanySize @default(Owner)
   email        String  @unique
   address      Address
   poBox        String
@@ -78,6 +97,8 @@ model Company {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   subscriptionId String       @db.ObjectId
+
+  Client Client[]
 }
 
 // roles
@@ -93,6 +114,8 @@ model Role {
   User      User[]
 
   Client Client[]
+
+  SuperAdmin SuperAdmin[]
 }
 
 model Job {
@@ -120,6 +143,7 @@ model SubscriptionPlan {
   id          String       @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description Json
+  companysize  CompanySize @default(Owner)
   duration    PlanDuration @default(MONTHLY)
   price       Float        @db.Double()
   discount    Float        @db.Double()
@@ -235,6 +259,7 @@ type WorkflowSteps {
   status WorkFlowStatus @default(PENDING)
 }
 
+
 ///// application  enums ---------------------------
 
 enum JobStatus {
@@ -279,4 +304,11 @@ enum InvoiceStatus {
   SENT
   APPROVED
   COMPLETED
+}
+enum CompanySize {
+  Owner
+  Five
+  Ten
+  Tenplus
+
 }
