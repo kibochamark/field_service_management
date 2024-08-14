@@ -19,14 +19,14 @@ model User {
   email         String   @unique
   firstName     String
   lastName      String
-  googleID      String?  @unique
-  appleID       String?  @unique
-  password      String?  @unique
-  salt          String?
+  googleID      String?  @unique @default("")
+  appleID       String?  @unique @default("")
+  password      String?  @unique  @default("")
+  salt          String?  @default("")
   profile       Profile?
   enabled       Boolean  @default(true)
-  company       Company  @relation(fields: [companyId], references: [id])
-  companyId     String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  company       Company?  @relation(fields: [companyId], references: [id])
+  companyId     String?   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
   role          Role     @relation(fields: [roleId], references: [id])
   roleId        String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
   createdAt     DateTime @default(now())
@@ -61,12 +61,12 @@ model Client {
   email     String   @unique
   firstName String?
   lastName  String?
-  googleID  String?  @unique
-  appleID   String?  @unique
-  password  String?  @unique
+  googleID  String?  @unique @default("")
+  appleID   String?  @unique @default("")
+  password  String?  @unique @default("")
   company   Company  @relation(fields: [companyId], references: [id])
   companyId  String  @db.ObjectId
-  salt      String?
+  salt      String? @default("")
   profile   Profile?
   enabled   Boolean  @default(true)
   role      Role     @relation(fields: [roleId], references: [id])

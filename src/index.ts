@@ -8,15 +8,47 @@ import routes from "./routes"
 import prisma from "./utils/prismaConfig"
 import { GlobalError } from "./types/errorTypes"
 import session from "express-session"
-
-
-
+import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import passport from 'passport';
+import bcrypt from 'bcryptjs';
+import "./strategies/local-strategy"
 
 
 dotenv.config()
 
 // initialize our app
 const app = express()
+
+
+// // prisma functions to handle session in the db
+
+// class PrismaSessionStore {
+//     prisma: any
+//     constructor(prisma: any) {
+//         this.prisma = prisma;
+//     }
+
+//     async get(sessionId: any) {
+//         return this.prisma.session.findUnique({
+//             where: { sessionId }
+//         });
+//     }
+
+//     async set(sessionId: any, session: { data: any; expiresAt: any }) {
+//         return this.prisma.session.upsert({
+//             where: { sessionId },
+//             update: { data: session.data, expiresAt: session.expiresAt },
+//             create: { sessionId, data: session.data, expiresAt: session.expiresAt }
+//         });
+//     }
+
+//     async destroy(sessionId: any) {
+//         return this.prisma.session.delete({
+//             where: { sessionId }
+//         });
+//     }
+// }
 
 
 // configure some settings
@@ -26,40 +58,76 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors({ credentials: true }));
 app.use(compression());
 app.use(cookieParser());
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    // store: new PrismaSessionStore(prisma),
+    cookie: { secure: false,
+        maxAge: 60000 * 60
+     },
+}))
+
+
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+app.get('/auth/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get('/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/' }),
+    (req, res) => {
+        res.redirect('/complete-profile');
+    }
+);
+
+
+// --------------------
+
+
 app.use("/api/v1/", routes)
+
+
+app.post('/api/auth', passport.authenticate('local'), 
+(req:express.Request, res:express.Response)=>{
+    console.log(req)
+    return res.status(200).end()
+})
+
+
+
 
 // catch all routes that are not specified in the routes folder
 
-app.use("*", (req:express.Request, res:express.Response, next:express.NextFunction)=>{
+app.use("*", (req: express.Request, res: express.Response, next: express.NextFunction) => {
     // create an error object
-    const error:GlobalError= new Error(`cant find ${req.originalUrl} on the server`)
+    const error: GlobalError = new Error(`cant find ${req.originalUrl} on the server`)
     error.status = "fail"
-    error.statusCode=404
+    error.statusCode = 404
 
     next(error)
 })
 
 
 // create our global error stack
-app.use((error:GlobalError, req:express.Request, res:express.Response, next:express.NextFunction)=>{
-        error.statusCode = error.statusCode || 500
-        error.status = error.status || "error"
+app.use((error: GlobalError, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    error.statusCode = error.statusCode || 500
+    error.status = error.status || "error"
 
-        res.status(error.statusCode).json({
-            status:error.statusCode,
-            message:error.message
-        }).end()
+    res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.message
+    }).end()
 })
 
-app.use(session({
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: true }
-  }))
 
 
 
-app.listen(8000, ()=>{
+
+app.listen(8000, () => {
     console.log("server has started")
 })
