@@ -15,6 +15,62 @@ import bcrypt from 'bcryptjs';
 import "./strategies/local-strategy"
 
 
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    callbackURL: "/auth/google/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      const existingUser = await prisma.user.findUnique({
+        where: { googleID: profile.id },
+      });
+
+      if (existingUser) {
+        return done(null, existingUser);  // Pass the user object if found
+      }
+
+      const newUser = await prisma.user.create({
+        data: {
+          email: profile.emails?.[0].value || '',
+          firstName: profile.name?.givenName || '',
+          lastName: profile.name?.familyName || '',
+          googleID: profile.id,
+          roleId: "66bc963e4e311a259ca4df43",  // Assuming you have a role ID for standard users
+        },
+      });
+
+      return done(null, newUser);  // Pass the new user object if created
+    } catch (err) {
+      return done(err, undefined);  // Pass the error as the first argument
+    }
+  }
+));
+
+passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+  
+passport.deserializeUser(async (id: string, done) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id },  // Correctly query by id without any nested fields
+      });
+  
+      if (user) {
+        done(null, user);  // Successfully found the user
+      } else {
+        done(null, false); // User not found
+      }
+    } catch (err) {
+      done(err, null); // Pass the error if something goes wrong
+    }
+  });
+  
+  
+
+
+
 dotenv.config()
 
 // initialize our app
@@ -84,6 +140,11 @@ app.get('/auth/google/callback',
         res.redirect('/complete-profile');
     }
 );
+app.get('/complete-profile', (req: express.Request, res: express.Response) => {
+    res.send("Complete your profile here!");
+  });
+  
+
 
 
 // --------------------
