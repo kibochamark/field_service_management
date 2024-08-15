@@ -17,47 +17,12 @@ import "./strategies/google-strategy"
 
 
 
-
-
-  
-  
-
-
-
 dotenv.config()
 
 // initialize our app
 const app = express()
 
 
-// // prisma functions to handle session in the db
-
-// class PrismaSessionStore {
-//     prisma: any
-//     constructor(prisma: any) {
-//         this.prisma = prisma;
-//     }
-
-//     async get(sessionId: any) {
-//         return this.prisma.session.findUnique({
-//             where: { sessionId }
-//         });
-//     }
-
-//     async set(sessionId: any, session: { data: any; expiresAt: any }) {
-//         return this.prisma.session.upsert({
-//             where: { sessionId },
-//             update: { data: session.data, expiresAt: session.expiresAt },
-//             create: { sessionId, data: session.data, expiresAt: session.expiresAt }
-//         });
-//     }
-
-//     async destroy(sessionId: any) {
-//         return this.prisma.session.delete({
-//             where: { sessionId }
-//         });
-//     }
-// }
 
 
 // configure some settings
@@ -157,6 +122,8 @@ app.use((error: GlobalError, req: express.Request, res: express.Response, next: 
         message: error.message
     }).end()
 })
+
+
 
 
 
