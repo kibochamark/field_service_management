@@ -19,12 +19,12 @@ model User {
   email         String   @unique
   firstName     String
   lastName      String
-  googleID      String?  @unique @default("")
-  appleID       String?  @unique @default("")
-  password      String?  @unique  @default("")
+  googleID      String?   
+  appleID       String?  
+  password      String?  @unique  
   salt          String?  @default("")
   profile       Profile?
-  enabled       Boolean  @default(true)
+  enabled       Boolean  @default(false)
   company       Company?  @relation(fields: [companyId], references: [id])
   companyId     String?   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
   role          Role     @relation(fields: [roleId], references: [id])

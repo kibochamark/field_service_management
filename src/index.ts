@@ -13,59 +13,12 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import "./strategies/local-strategy"
+import "./strategies/google-strategy"
 
 
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID!,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    callbackURL: "/auth/google/callback"
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      const existingUser = await prisma.user.findUnique({
-        where: { googleID: profile.id },
-      });
 
-      if (existingUser) {
-        return done(null, existingUser);  // Pass the user object if found
-      }
 
-      const newUser = await prisma.user.create({
-        data: {
-          email: profile.emails?.[0].value || '',
-          firstName: profile.name?.givenName || '',
-          lastName: profile.name?.familyName || '',
-          googleID: profile.id,
-          roleId: "66bc963e4e311a259ca4df43",  // Assuming you have a role ID for standard users
-        },
-      });
 
-      return done(null, newUser);  // Pass the new user object if created
-    } catch (err) {
-      return done(err, undefined);  // Pass the error as the first argument
-    }
-  }
-));
-
-passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-  
-passport.deserializeUser(async (id: string, done) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id },  // Correctly query by id without any nested fields
-      });
-  
-      if (user) {
-        done(null, user);  // Successfully found the user
-      } else {
-        done(null, false); // User not found
-      }
-    } catch (err) {
-      done(err, null); // Pass the error if something goes wrong
-    }
-  });
   
   
 
@@ -130,26 +83,45 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 
-app.get('/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+// Route to start Google authentication
+app.get('/auth/google', (req, res, next) => {
+  // Pass state parameter with the request
+  const state = req.query.role as string; // You can dynamically generate or retrieve this value
+  passport.authenticate('google', {
+      scope: ['profile', 'email'],
+      state: state // Pass the state parameter
+  })(req, res, next);
+});
+
 
 app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/' }),
     (req, res) => {
-        res.redirect('/complete-profile');
+      const user = req.user as any
+      if(user.companyId){
+        return res.status(200).json({
+          
+          status:"success",
+          message:"proceed to main page",
+          enabled:user.enabled
+        })
+      }
+      return res.status(200).json({
+        status:"error",
+        message:"set profile first",
+        enabled:user.enabled
+      });
     }
 );
+
 app.get('/complete-profile', (req: express.Request, res: express.Response) => {
     res.send("Complete your profile here!");
-  });
+});
   
 
 
 
 // --------------------
-
-
 app.use("/api/v1/", routes)
 
 
@@ -163,7 +135,6 @@ app.post('/api/auth', passport.authenticate('local'),
 
 
 // catch all routes that are not specified in the routes folder
-
 app.use("*", (req: express.Request, res: express.Response, next: express.NextFunction) => {
     // create an error object
     const error: GlobalError = new Error(`cant find ${req.originalUrl} on the server`)
@@ -172,6 +143,8 @@ app.use("*", (req: express.Request, res: express.Response, next: express.NextFun
 
     next(error)
 })
+
+
 
 
 // create our global error stack

@@ -3,27 +3,6 @@ import { Strategy } from "passport-local";
 import prisma from "../utils/prismaConfig";
 
 
-passport.serializeUser((user, done) => {
-    console.log("inside log console");
-    console.log(user)
-    done(null, user)
-})
-
-
-passport.deserializeUser(async (id, done) => {
-    try {
-        const findUser = await prisma.user.findFirst({
-            where: {
-                id: id as string
-            }
-        })
-        if (!findUser) throw new Error("user not found")
-        done(null, findUser)
-    } catch (err) {
-        done(err, null)
-    }
-})
-
 
 
 export default passport.use(

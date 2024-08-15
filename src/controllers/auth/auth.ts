@@ -34,7 +34,7 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
         }
 
 
-        const { firstname, lastname, phonenumber, email, password } = value;
+        const { firstname, lastname, phonenumber, email, password, role } = value;
 
         const {  salt, hashedPassword } = await hashPassword(password)
 
@@ -44,7 +44,7 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
             salt: salt,
             firstName: firstname,
             lastName: lastname,
-            roleId: "66bc963e4e311a259ca4df43",
+            roleId: role,
            
         })
 
