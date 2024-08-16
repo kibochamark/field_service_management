@@ -91,12 +91,12 @@ model Company {
   addressline2 String?
   image        Photo?
 
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   users          User[]
   enabled        Boolean      @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  subscriptionId String       @db.ObjectId
+  subscriptionId String?       @db.ObjectId
 
   Client Client[]
 }
@@ -310,5 +310,4 @@ enum CompanySize {
   Five
   Ten
   Tenplus
-
 }

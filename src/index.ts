@@ -8,12 +8,11 @@ import routes from "./routes"
 import prisma from "./utils/prismaConfig"
 import { GlobalError } from "./types/errorTypes"
 import session from "express-session"
-import { Strategy as LocalStrategy } from 'passport-local';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import "./strategies/local-strategy"
 import "./strategies/google-strategy"
+import { generateAccessToken, generateRefreshToken } from "./utils/tokens"
 
 
 
@@ -33,13 +32,14 @@ app.use(cors({ credentials: true }));
 app.use(compression());
 app.use(cookieParser());
 app.use(session({
-    secret: 'your-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    // store: new PrismaSessionStore(prisma),
-    cookie: { secure: false,
-        maxAge: 60000 * 60
-     },
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  // store: new PrismaSessionStore(prisma),
+  cookie: {
+    secure: false,
+    maxAge: 60000 * 60
+  },
 }))
 
 
@@ -53,36 +53,54 @@ app.get('/auth/google', (req, res, next) => {
   // Pass state parameter with the request
   const state = req.query.role as string; // You can dynamically generate or retrieve this value
   passport.authenticate('google', {
-      scope: ['profile', 'email'],
-      state: state // Pass the state parameter
+    scope: ['profile', 'email'],
+    state: state // Pass the state parameter
   })(req, res, next);
 });
 
 
+
+
+
 app.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/' }),
-    (req, res) => {
-      const user = req.user as any
-      if(user.companyId){
-        return res.status(200).json({
-          
-          status:"success",
-          message:"proceed to main page",
-          enabled:user.enabled
-        })
-      }
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => {
+    const user = req.user as any
+
+    // generate token
+    const accessToken = generateAccessToken(user?.id)
+    const refreshToken = generateRefreshToken(user?.id)
+
+
+    if (user.companyId) {
       return res.status(200).json({
-        status:"error",
-        message:"set profile first",
-        enabled:user.enabled
-      });
+
+        status: "success",
+        message: "proceed to main page",
+        enabled: user.enabled,
+        token:{
+          accessToken,
+          refreshToken
+        }
+      })
     }
+    return res.status(200).json({
+      status: "not finalized",
+      message: "set company first",
+      enabled: user.enabled,
+      token:{
+        accessToken,
+        refreshToken
+      }
+      
+    });
+  }
 );
 
 app.get('/complete-profile', (req: express.Request, res: express.Response) => {
-    res.send("Complete your profile here!");
+  res.send("Complete your profile here!");
 });
-  
+
 
 
 
@@ -90,23 +108,23 @@ app.get('/complete-profile', (req: express.Request, res: express.Response) => {
 app.use("/api/v1/", routes)
 
 
-app.post('/api/auth', passport.authenticate('local'), 
-(req:express.Request, res:express.Response)=>{
+app.post('/api/auth', passport.authenticate('local'),
+  (req: express.Request, res: express.Response) => {
     console.log(req)
     return res.status(200).end()
-})
+  })
 
 
 
 
 // catch all routes that are not specified in the routes folder
 app.use("*", (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    // create an error object
-    const error: GlobalError = new Error(`cant find ${req.originalUrl} on the server`)
-    error.status = "fail"
-    error.statusCode = 404
+  // create an error object
+  const error: GlobalError = new Error(`cant find ${req.originalUrl} on the server`)
+  error.status = "fail"
+  error.statusCode = 404
 
-    next(error)
+  next(error)
 })
 
 
@@ -114,13 +132,13 @@ app.use("*", (req: express.Request, res: express.Response, next: express.NextFun
 
 // create our global error stack
 app.use((error: GlobalError, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    error.statusCode = error.statusCode || 500
-    error.status = error.status || "error"
+  error.statusCode = error.statusCode || 500
+  error.status = error.status || "error"
 
-    res.status(error.statusCode).json({
-        status: error.statusCode,
-        message: error.message
-    }).end()
+  res.status(error.statusCode).json({
+    status: error.statusCode,
+    message: error.message
+  }).end()
 })
 
 
@@ -130,5 +148,5 @@ app.use((error: GlobalError, req: express.Request, res: express.Response, next: 
 
 
 app.listen(8000, () => {
-    console.log("server has started")
+  console.log("server has started")
 })
