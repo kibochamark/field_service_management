@@ -30,13 +30,26 @@ export default passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID!,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     callbackURL: "/auth/google/callback",
-    passReqToCallback:true
+    passReqToCallback: true
 },
     async (request, accessToken, refreshToken, profile, done) => {
         try {
             const state = request.query.state as string
             const existingUser = await prisma.user.findUnique({
-                where: { email: profile.emails ? profile.emails[0]?.value :""},
+                where: { email: profile.emails ? profile.emails[0]?.value : "" },
+                select: {
+                    profile: true,
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    googleID: true,
+                    appleID: true,
+                    enabled: true,
+                    company: true,
+                    role:true,
+                    createdAt: true,
+                }
             });
 
             if (existingUser) {
@@ -51,6 +64,19 @@ export default passport.use(new GoogleStrategy({
                     googleID: profile.id,
                     roleId: state,  // Assuming you have a role ID for standard users
                 },
+                select: {
+                    profile: true,
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    googleID: true,
+                    appleID: true,
+                    enabled: true,
+                    company: true,
+                    role:true,
+                    createdAt: true,
+                }
             });
 
             return done(null, newUser);  // Pass the new user object if created

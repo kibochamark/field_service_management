@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../utils/prismaConfig";
 import { GlobalError } from "../../types/errorTypes";
-import Joi from "joi";
+import Joi, { object } from "joi";
+import { hashPassword } from "../../utils/hashpasswordGenereator";
+import { generateAccessToken, generateRefreshToken } from "utils/tokens";
 
 // validation schema
 const companySchema = Joi.object({
@@ -23,6 +25,21 @@ const companySchema = Joi.object({
     }),
     subscriptionId: Joi.string()
 });
+
+
+// validation schema
+const employeeSchema = Joi.object({
+    firstname: Joi.string().required(),
+    lastname: Joi.string().required(),
+    phonenumber: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required(),
+    roleId: Joi.string().required(),
+    companyId: Joi.string().required()
+});
+
+
+
 
 export const createCompany = async (req: Request, res: Response, next: NextFunction) => {
     let statusError: GlobalError = new Error("")
@@ -52,7 +69,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
         subscriptionId,
         imageUrl,
         address,
-    } = req.body;
+    } = value;
 
     const decodeduser = req.user as any
 
@@ -93,7 +110,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
                 } : undefined,
                 address,
                 users: {
-                    connect: { id:user?.id },
+                    connect: { id: user?.id },
                 },
             },
         });
@@ -113,3 +130,158 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
         next(err);
     }
 };
+
+
+
+// create company employee
+export async function createEmployee(req: Request, res: Response, next: NextFunction) {
+    let statusError: GlobalError = new Error("")
+
+    try {
+
+        const { error, value } = employeeSchema.validate(req.body, { abortEarly: false });
+
+        if (error) {
+            statusError = new Error(JSON.stringify(
+                {
+                    error: error.details.map(detail => detail.message),
+                }
+            ))
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            next(statusError)
+
+        }
+
+
+        const { firstname, lastname, phonenumber, email, password, roleId, companyId } = value;
+
+        // restrict user not create an employee if he/she is not a business owner or  business admin
+        const user = req.user as any
+
+        console.log(user)
+
+        const role = await prisma.user.findUnique({
+            where: {
+                id: user?.userId
+            },
+            select: {
+                role: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+
+        const roleofnewuser = await prisma.user.findUnique({
+            where: {
+                id: roleId
+            },
+            select: {
+                role: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+
+        const company = await prisma.company.findUnique({
+            where: {
+                id: companyId
+            },
+            select: {
+                name: true
+            }
+        })
+
+        if ((role?.role.name !== "business owner") && (role?.role.name !== "business admin")) {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "You are not allowed to add employees"
+            return next(statusError)
+
+        }
+
+        if (roleofnewuser?.role.name !== "business admin") {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "We can only have one business owner"
+            return next(statusError)
+        }
+
+        if (!company) {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "Company does not exist"
+            return next(statusError)
+        }
+
+
+
+
+
+        const { salt, hashedPassword } = await hashPassword(password)
+
+        const newuser: any = await prisma.user.create({
+            data: {
+                email: email,
+                password: hashedPassword,
+                salt: salt,
+                firstName: firstname,
+                lastName: lastname,
+                roleId: roleId,
+                companyId: companyId
+            },
+            select: {
+                profile: true,
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                googleID: true,
+                appleID: true,
+                enabled: true,
+                company: {
+                    select: {
+                        name: true
+                    }
+                },
+                role: {
+                    select: {
+                        name: true
+                    }
+                },
+                createdAt: true,
+            }
+
+        })
+
+
+        if (!newuser) {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "something went wrong"
+            next(statusError)
+        }
+
+
+        return res.status(201).json({
+            status: "success",
+            data: {
+                newuser
+            }
+        }).end()
+
+
+
+
+
+    } catch (e: any) {
+        let error: GlobalError = new Error(`${e.message}`)
+        error.statusCode = 500
+        error.status = "server error"
+        next(error)
+    }
+}

@@ -42,7 +42,7 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
 
         const { salt, hashedPassword } = await hashPassword(password)
 
-        const newuser:any = await prisma.user.create({
+        const newuser: any = await prisma.user.create({
             data: {
                 email: email,
                 password: hashedPassword,
@@ -50,7 +50,29 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
                 firstName: firstname,
                 lastName: lastname,
                 roleId: roleId,
+            },
+            select: {
+                profile: true,
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                googleID: true,
+                appleID: true,
+                enabled: true,
+                company: {
+                    select: {
+                        name: true
+                    }
+                },
+                role: {
+                    select: {
+                        name: true
+                    }
+                },
+                createdAt: true,
             }
+
         })
 
 

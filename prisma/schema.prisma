@@ -105,9 +105,9 @@ model Company {
 
 model Role {
   id          String @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
+  name        String @unique
   description String
-  permissions Json
+  permissions Permission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -257,6 +257,11 @@ type JobSchedule {
 type WorkflowSteps {
   name   String
   status WorkFlowStatus @default(PENDING)
+}
+
+type Permission{
+  id String
+  value String
 }
 
 

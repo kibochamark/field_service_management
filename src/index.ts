@@ -13,6 +13,7 @@ import bcrypt from 'bcryptjs';
 import "./strategies/local-strategy"
 import "./strategies/google-strategy"
 import { generateAccessToken, generateRefreshToken } from "./utils/tokens"
+import { useTreblle } from "treblle"
 
 
 
@@ -47,6 +48,13 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// set up treblle for api monitoring and documentation
+useTreblle(app, {
+  apiKey: process.env.TREBLLE_API_KEY!,
+  projectId: process.env.TREBLLE_PROJECT_ID,
+})
+
+
 
 // Route to start Google authentication
 app.get('/auth/google', (req, res, next) => {
@@ -78,7 +86,7 @@ app.get('/auth/google/callback',
         status: "success",
         message: "proceed to main page",
         enabled: user.enabled,
-        token:{
+        token: {
           accessToken,
           refreshToken
         }
@@ -88,11 +96,11 @@ app.get('/auth/google/callback',
       status: "not finalized",
       message: "set company first",
       enabled: user.enabled,
-      token:{
+      token: {
         accessToken,
         refreshToken
       }
-      
+
     });
   }
 );
