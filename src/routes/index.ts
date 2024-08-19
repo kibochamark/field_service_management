@@ -3,7 +3,7 @@
  * this file include api routes for the fsm
  * with http verbs
  */
-import { createCompany, createEmployee } from "../controllers/company"
+import { createCompany, createEmployee, deleteCompany, getCompanies, getCompany, updateCompany } from "../controllers/company"
 import { createUserWithEmailAndPassword, loginUser } from "../controllers/auth/auth"
 import { createRole, deleteRoles, getRoles } from "../controllers/roles"
 import { Router } from "express"
@@ -29,7 +29,12 @@ routes.get("/roles", getRoles)
 routes.delete("/:roleid/role", deleteRoles)
 
 // Company routes
+routes.get("/companies", authenticateToken, getCompanies)
+routes.get("/:companyid/company", authenticateToken, getCompany)
 routes.post("/company", authenticateToken, createCompany);
+routes.patch("/company", authenticateToken, updateCompany);
 routes.post("/employee", authenticateToken, createEmployee);
+routes.delete("/:companyid/company", authenticateToken, deleteCompany)
+
 
 export default routes
