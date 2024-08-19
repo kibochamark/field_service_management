@@ -26,6 +26,27 @@ const companySchema = Joi.object({
     subscriptionId: Joi.string()
 });
 
+const updateCompanySchema = Joi.object({
+    companyid:Joi.string().required(),
+    name: Joi.string(),
+    description: Joi.string(),
+    companySize: Joi.string(),
+    email: Joi.string().email(),
+    poBox: Joi.string(),
+    addressline1: Joi.string(),
+    addressline2: Joi.string(),
+    imageUrl: Joi.object({
+        url: Joi.string()
+    }),
+    address: Joi.object({
+        street: Joi.string(),
+        city: Joi.string(),
+        zip: Joi.string(),
+        otherInfo: Joi.string()
+    }),
+    subscriptionId: Joi.string()
+});
+
 
 // validation schema
 const employeeSchema = Joi.object({
@@ -38,9 +59,13 @@ const employeeSchema = Joi.object({
     companyId: Joi.string().required()
 });
 
+const retrieveCompanySchema = Joi.object({
+    companyid :Joi.string().required()
+})
 
 
 
+// create company
 export const createCompany = async (req: Request, res: Response, next: NextFunction) => {
     let statusError: GlobalError = new Error("")
 
@@ -77,6 +102,14 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
         // Find the user to ensure they exist
         const user = await prisma.user.findUnique({
             where: { id: decodeduser.userId },
+            select:{
+                companyId:true,
+                role:{
+                    select:{
+                        name:true
+                    }
+                }
+            }
         });
 
 
@@ -84,14 +117,21 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
             const error: GlobalError = new Error("User not found");
             error.statusCode = 404;
             error.status = "fail";
-            next(error);
+            return next(error);
         }
 
         if (user?.companyId) {
             const error: GlobalError = new Error("User already has a company");
             error.statusCode = 400;
             error.status = "fail";
-            next(error);
+            return next(error);
+        }
+
+        if(user?.role.name !== "business owner"){
+            const error: GlobalError = new Error("You are not allowed to perform this action");
+            error.statusCode = 400;
+            error.status = "fail";
+            return next(error);
         }
 
         // Create the company with the user's ID
@@ -109,9 +149,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
                     url: imageUrl,
                 } : undefined,
                 address,
-                users: {
-                    connect: { id: user?.id },
-                },
+                
             },
         });
 
@@ -130,6 +168,122 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
         next(err);
     }
 };
+
+
+// get companies
+export const getCompanies = async(req: Request, res: Response, next: NextFunction)=>{
+    let statusError: GlobalError = new Error("")
+
+    try{
+        const user = req.user as any
+
+        const userrole = await prisma.user.findUnique({
+            where:{
+                id:user?.userId
+            },
+            select:{
+                role:{
+                    select:{
+                        name:true
+                    }
+                }
+            }
+        })
+
+        if(userrole?.role.name !== "super admin"){
+            statusError.statusCode = 400
+            statusError.status = "You are not allowed to perform this request"
+            return next(statusError)
+        }
+
+        const companies = await prisma.company.findMany()
+
+        return res.status(200).json(companies).end()
+
+    }catch(e:any){
+        statusError.statusCode = 500
+        statusError.status = "server error"
+        return next(statusError)
+    }
+}
+
+
+// get company by id
+export const getCompany = async(req: Request, res: Response, next: NextFunction)=>{
+    let statusError: GlobalError = new Error("")
+
+    try{
+        const { error, value } = retrieveCompanySchema.validate(req.params, { abortEarly: false });
+
+        if (error) {
+            statusError = new Error(JSON.stringify(
+                {
+                    error: error.details.map(detail => detail.message),
+                }
+            ))
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            next(statusError)
+
+        }
+
+        const {companyid} = value
+
+        
+
+        const company = await prisma.company.findUnique({
+            where:{
+                id:companyid
+            }
+        })
+
+        return res.status(200).json(company).end()
+
+    }catch(e:any){
+        statusError.statusCode = 500
+        statusError.status = "server error"
+        return next(statusError)
+    }
+}
+
+
+// update company
+export const updateCompany = async(req: Request, res: Response, next: NextFunction)=>{
+    let statusError: GlobalError = new Error("")
+
+    try{
+        const { error, value } = updateCompanySchema.validate(req.body, { abortEarly: false });
+
+        if (error) {
+            statusError = new Error(JSON.stringify(
+                {
+                    error: error.details.map(detail => detail.message),
+                }
+            ))
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            next(statusError)
+
+        }
+
+        const {companyid} = value
+
+        
+
+        const company = await prisma.company.findUnique({
+            where:{
+                id:companyid
+            }
+        })
+
+        return res.status(200).json(company).end()
+
+    }catch(e:any){
+        statusError.statusCode = 500
+        statusError.status = "server error"
+        return next(statusError)
+    }
+}
 
 
 
