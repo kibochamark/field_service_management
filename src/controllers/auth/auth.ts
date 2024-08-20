@@ -14,7 +14,7 @@ const userSchema = Joi.object({
     phonenumber: Joi.string().required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
-    roleId: Joi.string().required()
+    roleId:Joi.string()
 });
 
 
@@ -22,7 +22,7 @@ const userSchema = Joi.object({
 const googleUser = Joi.object({
     firstname: Joi.string().required(),
     lastname: Joi.string().required(),
-    email:Joi.string().email().required(),
+    email: Joi.string().email().required(),
     googleId: Joi.string().required(),
 });
 
@@ -49,6 +49,24 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
 
         const { firstname, lastname, phonenumber, email, password, roleId } = value;
 
+
+        // get role of business owner
+        const role = await prisma.role.findFirst({
+            where: {
+                name: "business owner"
+            },
+            select: {
+                id: true
+            }
+        })
+
+        if (!role) {
+            statusError.message = "roles of the business are not present in the system"
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            return next(statusError)
+        }
+
         const { salt, hashedPassword } = await hashPassword(password)
 
         const newuser: any = await prisma.user.create({
@@ -58,7 +76,7 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
                 salt: salt,
                 firstName: firstname,
                 lastName: lastname,
-                roleId: roleId,
+                roleId: roleId || role.id,
             },
             select: {
                 profile: true,
@@ -66,8 +84,6 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
                 email: true,
                 firstName: true,
                 lastName: true,
-                googleID: true,
-                appleID: true,
                 enabled: true,
                 company: {
                     select: {
@@ -89,24 +105,15 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
             statusError.statusCode = 400
             statusError.status = "fail"
             statusError.message = "something went wrong"
-            next(statusError)
+            return next(statusError)
         }
 
-        // generate token
-        const accessToken = generateAccessToken(newuser?.id)
-        const refreshToken = generateRefreshToken(newuser.id)
-
+       
 
 
         return res.status(201).json({
             status: "success",
-            data: {
-                token: {
-                    accessToken,
-                    refreshToken
-                },
-                newuser
-            }
+            data: newuser
         }).end()
 
 
@@ -140,17 +147,17 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
 
         const { firstname, lastname, email, googleId } = value;
 
-        const role= await prisma.role.findFirst({
-            where:{
-                name:"business owner"
+        const role = await prisma.role.findFirst({
+            where: {
+                name: "business owner"
             },
-            select:{
-                id:true
+            select: {
+                id: true
             }
         })
 
-        if(!role){
-            statusError.message="roles of the business are not present in the system"
+        if (!role) {
+            statusError.message = "roles of the business are not present in the system"
             statusError.statusCode = 400
             statusError.status = "fail"
             return next(statusError)
@@ -177,16 +184,16 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                     token: {
                         accessToken,
                         refreshToken,
-                        hascompany:existinguser?.companyId ? true :false
+                        hascompany: existinguser?.companyId ? true : false
                     }
                 }
             }).end()
-            
+
         } else {
             const newuser: any = await prisma.user.create({
                 data: {
                     email: email,
-                    googleID:googleId,
+                    googleID: googleId,
                     firstName: firstname,
                     lastName: lastname,
                     roleId: role.id,
@@ -235,7 +242,7 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                     token: {
                         accessToken,
                         refreshToken,
-                        hascompany:newuser?.companyId ? true :false
+                        hascompany: newuser?.companyId ? true : false
 
                     },
                 }
@@ -283,7 +290,7 @@ export async function loginUser(req: express.Request, response: express.Response
             const accessToken = generateAccessToken(user.id);
             const refreshToken = generateRefreshToken(user.id)
 
-            response.json({ accessToken, refreshToken,  hascompany:user?.companyId ? true :false });
+            response.json({ accessToken, refreshToken, hascompany: user?.companyId ? true : false });
         })(req, response, next);
     } catch (e: any) {
         error.status = "fail"
