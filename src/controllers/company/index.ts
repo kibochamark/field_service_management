@@ -77,7 +77,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
         ))
         statusError.statusCode = 400
         statusError.status = "fail"
-        next(statusError)
+        return next(statusError)
 
     }
 
@@ -95,6 +95,8 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
     } = value;
 
     const decodeduser = req.user as any
+
+    console.log(decodeduser)
 
     try {
         // Find the user to ensure they exist
@@ -164,9 +166,9 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
         res.status(201).json({
             status: "success",
             data: newCompany,
-        });
-    } catch (err) {
-        next(err);
+        }).end();
+    } catch (err:any) {
+        return next(err.message);
     }
 };
 

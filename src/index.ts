@@ -132,7 +132,7 @@ app.use("*", (req: express.Request, res: express.Response, next: express.NextFun
   error.status = "fail"
   error.statusCode = 404
 
-  next(error)
+  return next(error)
 })
 
 
@@ -143,7 +143,7 @@ app.use((error: GlobalError, req: express.Request, res: express.Response, next: 
   error.statusCode = error.statusCode || 500
   error.status = error.status || "error"
 
-  res.status(error.statusCode).json({
+  return res.status(error.statusCode).json({
     status: error.statusCode,
     message: error.message
   }).end()

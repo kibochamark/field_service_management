@@ -4,7 +4,7 @@
  * with http verbs
  */
 import { createCompany, createEmployee, deleteCompany, getCompanies, getCompany, updateCompany } from "../controllers/company"
-import { createUserWithEmailAndPassword, loginUser } from "../controllers/auth/auth"
+import { createUserWithEmailAndPassword, createUserwithGoogle, loginUser } from "../controllers/auth/auth"
 import { createRole, deleteRoles, getRoles } from "../controllers/roles"
 import { Router } from "express"
 import { validateEmail } from "../middleware/emailValidator"
@@ -17,6 +17,7 @@ const routes= Router()
 // authentication routes
 
 routes.post("/auth/signup", validateEmail, createUserWithEmailAndPassword)
+routes.post("/auth/google", validateEmail, createUserwithGoogle)
 routes.post("/auth/login", validateEmail, loginUser)
 
 

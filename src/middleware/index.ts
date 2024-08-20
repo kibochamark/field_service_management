@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { GlobalError } from '../types/errorTypes';
 import { verifyAccessToken } from '../utils/tokens';
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = async(req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     let error: GlobalError = new Error("")
@@ -11,7 +11,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     if (token == null) {
         error.statusCode = 401
         error.status = "unauthorized"
-        next(error)
+        return next(error)
     };
 
 
@@ -22,9 +22,9 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
         error.statusCode = 403
         error.status = "forbidden"
         error.message="invalid or expired token"
-        next(error)
+        return next(error)
     }
 
-    req.user = decoded_token
-    next()
+    req.user = decoded_token as any
+    return next()
 };
