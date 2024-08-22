@@ -140,7 +140,7 @@ app.use("*", (req: express.Request, res: express.Response, next: express.NextFun
 
 // create our global error stack
 app.use((error: GlobalError, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  error.statusCode = error.statusCode || 500
+  error.statusCode = error?.statusCode || 500
   error.status = error.status || "error"
 
   return res.status(error.statusCode).json({

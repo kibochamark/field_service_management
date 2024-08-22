@@ -42,7 +42,7 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
             ))
             statusError.statusCode = 400
             statusError.status = "fail"
-            next(statusError)
+            return next(statusError)
 
         }
 
@@ -121,7 +121,7 @@ export async function createUserWithEmailAndPassword(req: express.Request, res: 
         let error: GlobalError = new Error(`${e.message}`)
         error.statusCode = 500
         error.status = "server error"
-        next(error)
+        return next(error)
     }
 }
 
