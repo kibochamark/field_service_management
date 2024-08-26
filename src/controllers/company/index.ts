@@ -4,6 +4,7 @@ import { GlobalError } from "../../types/errorTypes";
 import Joi, { object } from "joi";
 import { hashPassword } from "../../utils/hashpasswordGenereator";
 import { generateAccessToken, generateRefreshToken } from "utils/tokens";
+import { permission } from "process";
 
 // validation schema
 const companySchema = Joi.object({
@@ -54,7 +55,8 @@ const employeeSchema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
     roleId: Joi.string().required(),
-    companyId: Joi.string().required()
+    companyId: Joi.string().required(),
+    permissions:Joi.array<string>()
 });
 
 const retrieveCompanySchema = Joi.object({
@@ -431,7 +433,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
         }
 
 
-        const { firstname, lastname, phonenumber, email, password, roleId, companyId } = value;
+        const { firstname, lastname, phonenumber, email, password, roleId, companyId, permissions } = value;
 
         // restrict user not create an employee if he/she is not a business owner or  business admin
         const user = req.user as any
@@ -501,9 +503,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
 
 
-        const permissions:string[] = roleofnewuser.role.permissions.flatMap((perm)=> {
-            return perm.key as string
-        })
+       
 
 
 
