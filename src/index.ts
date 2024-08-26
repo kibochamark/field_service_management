@@ -88,7 +88,8 @@ app.get('/auth/google/callback',
         enabled: user.enabled,
         token: {
           accessToken,
-          refreshToken
+          refreshToken,
+          companyId:user.companyId
         }
       })
     }
