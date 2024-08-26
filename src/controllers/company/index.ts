@@ -436,7 +436,6 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
         // restrict user not create an employee if he/she is not a business owner or  business admin
         const user = req.user as any
 
-        console.log(user)
 
         const role = await prisma.user.findUnique({
             where: {
@@ -509,7 +508,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
                 firstName: firstname,
                 lastName: lastname,
                 roleId: roleId,
-                companyId: companyId
+                companyId: companyId,
             },
             select: {
                 profile: true,

@@ -32,6 +32,7 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   DispatcherJob Job[]    @relation(name: "dispatcher")
+  permissions  String[]
 
   TechnicianJob Job[]     @relation(name: "technician")
   Invoice       Invoice[]
@@ -261,7 +262,12 @@ type WorkflowSteps {
 
 type Permission{
   id String
+  key String?
   value String
+}
+
+type UserPermissions{
+  key String
 }
 
 
