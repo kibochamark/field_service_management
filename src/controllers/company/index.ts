@@ -457,7 +457,12 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
             select: {
                 role: {
                     select: {
-                        name: true
+                        name: true,
+                        permissions:{
+                            select:{
+                                key:true
+                            }
+                        }
                     }
                 }
             }
@@ -496,6 +501,12 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
 
 
+        const permissions:string[] = roleofnewuser.role.permissions.flatMap((perm)=> {
+            return perm.key as string
+        })
+
+
+
 
 
         const { salt, hashedPassword } = await hashPassword(password)
@@ -509,6 +520,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
                 lastName: lastname,
                 roleId: roleId,
                 companyId: companyId,
+                permissions:permissions 
             },
             select: {
                 profile: true,
