@@ -77,6 +77,7 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
 
 
         return res.status(200).json(users)
+        
 
     } catch (e: any) {
         statusError.statusCode = 500
