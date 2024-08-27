@@ -56,7 +56,7 @@ const employeeSchema = Joi.object({
     password: Joi.string().min(6).required(),
     roleId: Joi.string().required(),
     companyId: Joi.string().required(),
-    permissions:Joi.array<string>()
+    permissions: Joi.array<string>()
 });
 
 const retrieveCompanySchema = Joi.object({
@@ -169,7 +169,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
             status: "success",
             data: newCompany,
         }).end();
-    } catch (err:any) {
+    } catch (err: any) {
         return next(err.message);
     }
 };
@@ -197,7 +197,7 @@ export const getCompanies = async (req: Request, res: Response, next: NextFuncti
 
         if (userrole?.role.name !== "super admin") {
             statusError.statusCode = 400
-            statusError.status="fail"
+            statusError.status = "fail"
             statusError.message = "You are not allowed to perform this request"
             return next(statusError)
         }
@@ -251,11 +251,11 @@ export const deleteCompany = async (req: Request, res: Response, next: NextFunct
             return next(statusError)
         }
 
-        const {companyId} = value
+        const { companyId } = value
 
         const companies = await prisma.company.delete({
             where: {
-                id:companyId
+                id: companyId
             }
         })
 
@@ -452,23 +452,23 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
             }
         })
 
-        const roleofnewuser = await prisma.user.findUnique({
+        const roleofnewuser = await prisma.role.findUnique({
             where: {
-                id: roleId
+                id: roleId as string
             },
             select: {
-                role: {
+
+                name: true,
+                permissions: {
                     select: {
-                        name: true,
-                        permissions:{
-                            select:{
-                                key:true
-                            }
-                        }
+                        key: true
                     }
                 }
+
             }
         })
+
+        console.log(roleId, roleofnewuser, 'new user')
 
         const company = await prisma.company.findUnique({
             where: {
@@ -487,7 +487,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
         }
 
-        if (roleofnewuser?.role.name !== "business admin") {
+        if (roleofnewuser?.name !== "business admin") {
             statusError.statusCode = 400
             statusError.status = "fail"
             statusError.message = "We can only have one business owner"
@@ -503,7 +503,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
 
 
-       
+
 
 
 
@@ -520,7 +520,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
                 lastName: lastname,
                 roleId: roleId,
                 companyId: companyId,
-                permissions:permissions 
+                permissions: permissions
             },
             select: {
                 profile: true,
@@ -553,6 +553,8 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
             statusError.message = "something went wrong"
             next(statusError)
         }
+
+        console.log(newuser, "user")
 
 
         return res.status(201).json({

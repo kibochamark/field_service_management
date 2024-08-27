@@ -184,7 +184,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                     token: {
                         accessToken,
                         refreshToken,
-                        hascompany: existinguser?.companyId ? true : false
+                        hascompany: existinguser?.companyId ? true : false,
+                        companyId: existinguser?.companyId ?? ""
                     }
                 }
             }).end()
