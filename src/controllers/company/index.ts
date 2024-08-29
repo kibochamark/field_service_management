@@ -520,6 +520,9 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
                 lastName: lastname,
                 roleId: roleId,
                 companyId: companyId,
+                profile:{
+                    phone:phonenumber
+                },
                 permissions: permissions
             },
             select: {
