@@ -147,7 +147,7 @@ app.use((error: GlobalError, req: express.Request, res: express.Response, next: 
   return res.status(error.statusCode).json({
     status: error.statusCode,
     message: error.message
-  }).end()
+  })
 })
 
 

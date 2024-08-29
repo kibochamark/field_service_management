@@ -9,7 +9,7 @@ import { createRole, deleteRoles, getRoles } from "../controllers/roles"
 import { Router } from "express"
 import { validateEmail } from "../middleware/emailValidator"
 import { authenticateToken } from "../middleware/index"
-import { getEmployees } from "../controllers/employee"
+import { deleteEmployee, getEmployees, updateEmployee } from "../controllers/employee"
 
 
 const routes= Router()
@@ -36,6 +36,8 @@ routes.get("/:companyid/company", authenticateToken, getCompany)
 routes.post("/company", authenticateToken, createCompany);
 routes.patch("/company", authenticateToken, updateCompany);
 routes.post("/employee", authenticateToken, createEmployee);
+routes.patch("/:employeeid/employee", authenticateToken, updateEmployee);
+routes.delete("/:employeeid/employee", authenticateToken, deleteEmployee);
 routes.delete("/:companyid/company", authenticateToken, deleteCompany)
 
 
