@@ -69,14 +69,14 @@ export async function getCustomers(req: Request, res: Response, next: NextFuncti
         }
 
 
-        const { companyId } = value
+        const { companyid } = value
 
         // retrieve user
         const user = req.user as any
 
         const company = await prisma.company.findUnique({
             where: {
-                id: companyId
+                id: companyid
             }
         })
 
@@ -88,7 +88,11 @@ export async function getCustomers(req: Request, res: Response, next: NextFuncti
             next(statusError)
         }
 
-        const customers = await prisma.client.findMany()
+        const customers = await prisma.client.findMany({
+            where:{
+                companyId:companyid
+            }
+        })
 
         return res.status(200).json(customers).end()
 
