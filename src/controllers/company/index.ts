@@ -521,7 +521,10 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
                 roleId: roleId,
                 companyId: companyId,
                 profile:{
-                    phone:phonenumber
+                    set:{
+                        phone:phonenumber
+                        
+                    }
                 },
                 permissions: permissions
             },

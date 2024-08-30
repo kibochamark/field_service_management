@@ -72,6 +72,31 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
             where: {
                 companyId: companyid,
             },
+            select: {
+                id:true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                googleID: true,
+                appleID: true,
+
+
+                profile: {
+                    select: {
+                        phone: true
+                    }
+
+                },
+
+                createdAt: true,
+                role:{
+                    select:{
+                        name:true
+                    }
+                }
+
+
+            }
 
         })
 
@@ -204,20 +229,20 @@ export const updateEmployee = async (req: Request, res: Response, next: NextFunc
 
         const employee = await prisma.user.update({
             where: {
-              id: employeeid,
+                id: employeeid,
             },
             data: {
-            
-              ...(firstName && { firstName }), // Conditionally update 'firstName'
-              ...(lastName && { lastName }), // Conditionally update 'lastName'
-              ...(email && { email }), // Conditionally update 'email'
-              ...(password && { password }), // Conditionally update 'password'
-              ...(roleId && { roleId }), // Conditionally update 'roleId'
-              ...(permissions && { permissions }), // Conditionally update 'permissions'
-              
+
+                ...(firstName && { firstName }), // Conditionally update 'firstName'
+                ...(lastName && { lastName }), // Conditionally update 'lastName'
+                ...(email && { email }), // Conditionally update 'email'
+                ...(password && { password }), // Conditionally update 'password'
+                ...(roleId && { roleId }), // Conditionally update 'roleId'
+                ...(permissions && { permissions }), // Conditionally update 'permissions'
+
             },
-          });
-          
+        });
+
 
         console.log(employee)
 
