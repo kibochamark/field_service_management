@@ -10,6 +10,9 @@ import { Router } from "express"
 import { validateEmail } from "../middleware/emailValidator"
 import { authenticateToken } from "../middleware/index"
 import { deleteEmployee, getEmployees, updateEmployee } from "../controllers/employee"
+import { createBulkCustomers, createCustomer, deleteCustomer, getCustomer, updateCustomer } from "../controllers/customers"
+import { upload } from "../utils/multerStorage"
+import { auth } from "google-auth-library"
 
 
 const routes= Router()
@@ -43,6 +46,17 @@ routes.delete("/:companyid/company", authenticateToken, deleteCompany)
 
 // company employees
 routes.get("/:companyid/employees", authenticateToken, getEmployees)
+
+
+
+// customers
+routes.post("/customers/bulk", authenticateToken, upload.single("file"), createBulkCustomers);
+routes.post("/customers", authenticateToken, createCustomer);
+routes.put("/customer/:id", authenticateToken, updateCustomer);
+routes.get("/customer/:id", authenticateToken, getCustomer);
+routes.delete("/customer/:id", authenticateToken, deleteCustomer);
+
+
 
 
 

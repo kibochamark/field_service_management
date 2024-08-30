@@ -14,7 +14,8 @@ import "./strategies/local-strategy"
 import "./strategies/google-strategy"
 import { generateAccessToken, generateRefreshToken } from "./utils/tokens"
 import { useTreblle } from "treblle"
-
+import path from "path"
+import { cwd } from "process"
 
 
 dotenv.config()
@@ -23,12 +24,17 @@ dotenv.config()
 const app = express()
 
 
+const dirpath =process.cwd()
+const publicDir = path.resolve(__dirname, 'public');
+
+console.log(publicDir)
 
 
 // configure some settings
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(publicDir))
 app.use(cors());
 app.use(compression());
 app.use(cookieParser());
@@ -47,6 +53,7 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+
 
 // set up treblle for api monitoring and documentation
 useTreblle(app, {
