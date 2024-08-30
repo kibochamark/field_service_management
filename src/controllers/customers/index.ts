@@ -71,22 +71,24 @@ export async function getCustomers(req: Request, res: Response, next: NextFuncti
 
         const { companyid } = value
 
+        console.log(companyid)
         // retrieve user
-        const user = req.user as any
 
-        const company = await prisma.company.findUnique({
-            where: {
-                id: companyid
-            }
-        })
+        // const company = await prisma.company.findFirst({
+        //     where: {
+        //         id:"66c2eec742a6dd6db4d0a17a"
+        //     }
+        // })
+
+        // console.log(company)
 
 
-        if (!company) {
-            statusError.statusCode = 404
-            statusError.status = "Not found"
-            statusError.message = "Company not found"
-            next(statusError)
-        }
+        // if (!company) {
+        //     statusError.statusCode = 404
+        //     statusError.status = "Not found"
+        //     statusError.message = "Company not found"
+        //     next(statusError)
+        // }
 
         const customers = await prisma.client.findMany({
             where:{
