@@ -20,6 +20,9 @@ const CustomerSchema = Joi.object({
 const retrieveCustomerSchema = Joi.object({
     id: Joi.string().required()
 })
+const retrieveCustomerInfoSchema = Joi.object({
+    companyid: Joi.string().required()
+})
 
 
 const createCustomerSChema = Joi.object({
@@ -431,28 +434,28 @@ export async function createBulkCustomers(req: Request, res: Response, next: Nex
 
         }
 
-        const {roleId, companyId}= value
+        const { roleId, companyId } = value
 
 
-        let array:any = []
+        let array: any = []
 
 
         if (jsonArray.length > 0) {
-            array=jsonArray.map((client) => {
+            array = jsonArray.map((client) => {
                 return {
-                    firstName:client?.firstName,
-                    lastName:client?.lastName,
-                    email:client?.email,
-                    profile:{
-                        phone:client?.phone,
-                        address:{
-                            street:client?.street,
-                            city:client?.city,
-                            state:client?.state,
-                            zip:client?.zipcode
+                    firstName: client?.firstName,
+                    lastName: client?.lastName,
+                    email: client?.email,
+                    profile: {
+                        phone: client?.phone,
+                        address: {
+                            street: client?.street,
+                            city: client?.city,
+                            state: client?.state,
+                            zip: client?.zipcode
                         }
                     },
-                    notes:client?.notes,
+                    notes: client?.notes,
                     roleId: roleId,
                     companyId: companyId
                 }
@@ -466,7 +469,7 @@ export async function createBulkCustomers(req: Request, res: Response, next: Nex
 
 
 
-        const customers =await prisma.client.createMany({
+        const customers = await prisma.client.createMany({
             data: [
                 ...array,
 
@@ -484,3 +487,65 @@ export async function createBulkCustomers(req: Request, res: Response, next: Nex
 }
 
 
+
+
+
+
+
+export async function getCustomersInfo(req: Request, res: Response, next: NextFunction) {
+    let statusError: GlobalError = new Error("")
+
+    try {
+
+        // check if users has passed a companyId in the request parameter object
+        const { error, value } = retrieveCustomerInfoSchema.validate(req.params, { abortEarly: false });
+        if (error) {
+            statusError = new Error(JSON.stringify(
+                {
+                    error: error.details.map(detail => detail.message),
+                }
+            ))
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            next(statusError)
+
+        }
+
+
+        const { companyid } = value
+
+
+        const number_of_active_customers = await prisma.client.count({
+            where: {
+                companyId: companyid,
+                enabled:true
+            },
+        })
+        const number_of_customers = await prisma.client.count({
+            where: {
+                companyId: companyid,
+            },
+        })
+        const number_of_inactive_customers = await prisma.client.count({
+            where: {
+                companyId: companyid,
+                enabled:false
+            },
+        })
+
+        return res.status(200).json({
+            number_of_active_customers,
+            number_of_customers,
+            number_of_inactive_customers
+        }).end()
+
+
+
+    } catch (e: any) {
+        statusError.statusCode = 500
+        statusError.status = "server error"
+        statusError.message = e?.message
+        next(statusError)
+    }
+
+}
