@@ -10,7 +10,7 @@ import { Router } from "express"
 import { validateEmail } from "../middleware/emailValidator"
 import { authenticateToken } from "../middleware/index"
 import { deleteEmployee, getEmployees, updateEmployee } from "../controllers/employee"
-import { createBulkCustomers, createCustomer, deleteCustomer, getCustomer, getCustomersInfo, updateCustomer } from "../controllers/customers"
+import { createBulkCustomers, createCustomer, deleteCustomer, getCustomer, getCustomers, getCustomersInfo, updateCustomer } from "../controllers/customers"
 import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
 
@@ -54,6 +54,7 @@ routes.post("/customers/bulk", authenticateToken, upload.single("file"), createB
 routes.post("/customers", authenticateToken, createCustomer);
 routes.put("/customer/:id", authenticateToken, updateCustomer);
 routes.get("/customer/:id", authenticateToken, getCustomer);
+routes.get("/customers/:companyid", authenticateToken, getCustomers);
 routes.get("/customerinfo/:companyid", authenticateToken, getCustomersInfo);
 routes.delete("/customer/:id", authenticateToken, deleteCustomer);
 
