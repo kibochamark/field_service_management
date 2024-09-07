@@ -85,6 +85,8 @@ app.get('/auth/google/callback',
     // generate token
     const accessToken = generateAccessToken(user?.id)
     const refreshToken = generateRefreshToken(user?.id)
+    
+    console.log(user)
 
 
     if (user.companyId) {
@@ -96,7 +98,8 @@ app.get('/auth/google/callback',
         token: {
           accessToken,
           refreshToken,
-          companyId:user?.companyId
+          companyId:user?.companyId,
+          role:user?.role?.name
         }
       })
     }
@@ -106,7 +109,8 @@ app.get('/auth/google/callback',
       enabled: user.enabled,
       token: {
         accessToken,
-        refreshToken
+        refreshToken,
+        role:user?.role?.name
       }
 
     });

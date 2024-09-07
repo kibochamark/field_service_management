@@ -167,6 +167,16 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
         const existinguser = await prisma.user.findFirst({
             where: {
                 googleID: googleId as string
+            },
+            select:{
+                id:true,
+                googleID:true,
+                companyId:true,
+                role:{
+                    select:{
+                        name:true
+                    }
+                }
             }
         })
 
@@ -185,7 +195,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         accessToken,
                         refreshToken,
                         hascompany: existinguser?.companyId ? true : false,
-                        companyId: existinguser?.companyId ?? ""
+                        companyId: existinguser?.companyId ?? "",
+                        role :existinguser?.role?.name
                     }
                 }
             }).end()
@@ -243,7 +254,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                     token: {
                         accessToken,
                         refreshToken,
-                        hascompany: newuser?.companyId ? true : false
+                        hascompany: newuser?.companyId ? true : false,
+                        role:newuser?.role?.name
 
                     },
                 }

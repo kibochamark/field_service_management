@@ -74,7 +74,11 @@ export default passport.use(new GoogleStrategy({
                     appleID: true,
                     enabled: true,
                     company: true,
-                    role:true,
+                    role:{
+                        select:{
+                            name:true
+                        }
+                    },
                     createdAt: true,
                 }
             });
