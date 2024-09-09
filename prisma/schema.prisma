@@ -16,39 +16,55 @@ datasource db {
 //company users as well superadmin
 model User {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  username      String?  @unique
   email         String   @unique
-  firstName     String?
-  lastName      String?
-  googleID      String?  @unique
-  appleID       String?  @unique
+  firstName     String
+  lastName      String
+  googleID      String?
+  appleID       String?
   password      String?  @unique
-  salt          String?
+  salt          String?  @default("")
   profile       Profile?
-  enabled       Boolean  @default(true)
-  company       Company  @relation(fields: [companyId], references: [id])
-  companyId     String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  enabled       Boolean  @default(false)
+  company       Company? @relation(fields: [companyId], references: [id])
+  companyId     String?  @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
   role          Role     @relation(fields: [roleId], references: [id])
   roleId        String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   DispatcherJob Job[]    @relation(name: "dispatcher")
+  permissions   String[]
 
   TechnicianJob Job[]     @relation(name: "technician")
   Invoice       Invoice[]
 }
 
-//clients
-model Client {
+// Super Admin
+model SuperAdmin {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  username  String?  @unique
   email     String   @unique
-  firstName String?
-  lastName  String?
+  firstName String
+  lastName  String
   googleID  String?  @unique
   appleID   String?  @unique
   password  String?  @unique
   salt      String?
+  profile   Profile?
+  enabled   Boolean  @default(true)
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//clients
+model Client {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  firstName String
+  lastName  String
+  notes     String
+  company   Company  @relation(fields: [companyId], references: [id])
+  companyId String   @db.ObjectId
   profile   Profile?
   enabled   Boolean  @default(true)
   role      Role     @relation(fields: [roleId], references: [id])
@@ -62,37 +78,42 @@ model Client {
 
 //compamny / business
 model Company {
-  id           String  @id @default(auto()) @map("_id") @db.ObjectId
-  name         String  @unique
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  name         String      @unique
   description  String
-  email        String  @unique
+  companysize  CompanySize @default(Owner)
+  email        String      @unique
   address      Address
   poBox        String
   addressline1 String
   addressline2 String?
   image        Photo?
 
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   users          User[]
-  enabled        Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  subscriptionId String       @db.ObjectId
+  enabled        Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  subscriptionId String?       @db.ObjectId
+
+  Client Client[]
 }
 
 // roles
 
 model Role {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String       @unique
   description String
-  permissions Json
+  permissions Permission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   User      User[]
 
   Client Client[]
+
+  SuperAdmin SuperAdmin[]
 }
 
 model Job {
@@ -120,6 +141,7 @@ model SubscriptionPlan {
   id          String       @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description Json
+  companysize CompanySize  @default(Owner)
   duration    PlanDuration @default(MONTHLY)
   price       Float        @db.Double()
   discount    Float        @db.Double()
@@ -207,6 +229,7 @@ type Address {
   street    String
   city      String
   zip       String
+  state     String
   otherinfo String?
 }
 
@@ -219,8 +242,8 @@ type Photo {
 
 //profile
 type Profile {
-  address Address
-  phone   String
+  address Address?
+  phone   String?
   image   Photo?
 }
 
@@ -233,6 +256,16 @@ type JobSchedule {
 type WorkflowSteps {
   name   String
   status WorkFlowStatus @default(PENDING)
+}
+
+type Permission {
+  id    String
+  key   String?
+  value String
+}
+
+type UserPermissions {
+  key String
 }
 
 ///// application  enums ---------------------------
@@ -279,4 +312,11 @@ enum InvoiceStatus {
   SENT
   APPROVED
   COMPLETED
+}
+
+enum CompanySize {
+  Owner
+  Five
+  Ten
+  Tenplus
 }
