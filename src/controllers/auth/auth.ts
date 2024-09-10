@@ -298,12 +298,14 @@ export async function loginUser(req: express.Request, response: express.Response
                 next(error)
             };
 
-            console.log(user)
+            console.log(user, ",me")
 
             const accessToken = generateAccessToken(user.id);
             const refreshToken = generateRefreshToken(user.id)
 
-            response.json({ accessToken, refreshToken, hascompany: user?.companyId ? true : false });
+            response.json({ accessToken, refreshToken, hascompany: user?.companyId ? true : false,   
+                                      role:user?.role?.name
+            });
         })(req, response, next);
     } catch (e: any) {
         error.status = "fail"

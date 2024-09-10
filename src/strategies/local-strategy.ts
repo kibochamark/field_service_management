@@ -12,6 +12,24 @@ export default passport.use(
             const findUser = await prisma.user.findFirst({
                 where: {
                     email: username as string
+                },
+                select: {
+                    profile: true,
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    password:true,
+                    lastName: true,
+                    googleID: true,
+                    appleID: true,
+                    enabled: true,
+                    company: true,
+                    role:{
+                        select:{
+                            name:true
+                        }
+                    },
+                    createdAt: true,
                 }
             })
             if (!findUser) throw new Error("user not found")
