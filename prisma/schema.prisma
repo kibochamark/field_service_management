@@ -120,6 +120,7 @@ model Job {
   id           String      @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   description  String
+  jobType      String
   location     Address
   status       JobStatus   @default(NOTASSIGNED)
   dispatcher   User?       @relation(name: "dispatcher", fields: [dispatcherId], references: [id])
@@ -130,8 +131,8 @@ model Job {
   clientId     String      @db.ObjectId
   jobschedule  JobSchedule
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   Workflows Workflows[]
   Invoice   Invoice[]
