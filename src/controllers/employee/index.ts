@@ -346,7 +346,8 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
         // Remove header rows, only process actual employee data
         const jsonArray = xlData.slice(3); // Skip first two rows (headers and labels)
 
-        // Validate request body
+        // Validate request body 
+        
         const { error, value } = retrieveEmployeesSchema.validate(req.body, { abortEarly: false });
 
         if (error) {
