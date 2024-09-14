@@ -4,6 +4,7 @@ import { GlobalError } from "../../types/errorTypes"
 import prisma from "../../utils/prismaConfig"
 import csv from "csvtojson/v2"
 import * as XLSX from "xlsx"
+import { hashPassword } from "../../utils/hashpasswordGenereator"
 
 
 const retrieveEmployeesSchema = Joi.object({
@@ -395,6 +396,8 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
                     return next(statusError);
                 }
 
+                // create salt from password
+                const {salt, hashedPassword} = await hashPassword(employee?.password)
                 // Construct employee object to be inserted
                 array.push({
                     firstName: employee?.firstName,
@@ -409,6 +412,8 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
                             zip: `${employee?.zip}`
                         }
                     },
+                    password:hashedPassword,
+                    salt:salt,
                     roleId: role.id, // Use the role id retrieved from the database
                     companyId: companyid
                 });
