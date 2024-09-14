@@ -3,6 +3,7 @@ import Joi from "joi"
 import { GlobalError } from "../../types/errorTypes"
 import prisma from "../../utils/prismaConfig"
 import csv from "csvtojson/v2"
+import * as XLSX from "xlsx"
 
 
 const retrieveEmployeesSchema = Joi.object({
@@ -75,7 +76,7 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
                 companyId: companyid,
             },
             select: {
-                id:true,
+                id: true,
                 firstName: true,
                 lastName: true,
                 email: true,
@@ -91,9 +92,9 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
                 },
 
                 createdAt: true,
-                role:{
-                    select:{
-                        name:true
+                role: {
+                    select: {
+                        name: true
                     }
                 }
 
@@ -336,8 +337,14 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
     let statusError: GlobalError = new Error("");
 
     try {
-        // Parse the Excel or CSV file to get employee data
-        let jsonArray = await csv().fromFile(req.file?.path as string);
+        // Parse the Excel file using XLSX
+        var workbook = XLSX.readFile(req?.file?.path as string);
+        var sheet_name_list = workbook.SheetNames;
+        var xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+        // console.log(xlData); // To inspect data from the Excel file
+
+        // Remove header rows, only process actual employee data
+        const jsonArray = xlData.slice(3); // Skip first two rows (headers and labels)
 
         // Validate request body
         const { error, value } = retrieveEmployeesSchema.validate(req.body, { abortEarly: false });
@@ -355,49 +362,35 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
         }
 
         const { companyid } = value;
+        const user = req.user as any;
 
-        const user = req.user as any
-
+        // Check if the user has the correct role to perform this action
         const userrole = await prisma.user.findUnique({
-            where: {
-                id: user?.userId
-            },
+            where: { id: user?.userId },
             select: {
-                role: {
-                    select: {
-                        name: true
-                    }
-                }
+                role: { select: { name: true } }
             }
-        })
-
-
+        });
 
         if (userrole?.role.name !== "super admin" && userrole?.role.name !== "business owner" && userrole?.role.name !== "business admin") {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "You are not allowed to perform this request"
-            return next(statusError)
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            statusError.message = "You are not allowed to perform this request";
+            return next(statusError);
         }
-
 
         let array: any = [];
 
         if (jsonArray.length > 0) {
-            for (let employee of jsonArray) {
-                // Lookup role by name from the database
+            for (let employee of jsonArray as any) {
+                // Lookup role by name from the Excel data
                 const role = await prisma.role.findUnique({
-                    where: {
-                        name: employee.role // Match role names in the Excel sheet (e.g., "business admin", "dispatcher")
-                    },
-                    select: {
-                        id: true,
-                        name: true
-                    }
+                    where: { name: employee["__EMPTY_8"] }, // Match role names in the Excel sheet (e.g., "business admin", "dispatcher")
+                    select: { id: true, name: true }
                 });
 
                 if (!role) {
-                    statusError = new Error(`Role ${employee.role} not found for ${employee.firstName} ${employee.lastName}`);
+                    statusError = new Error(`Role ${employee.__EMPTY_9} not found for ${employee.__EMPTY} ${employee.__EMPTY_1}`);
                     statusError.statusCode = 400;
                     statusError.status = "fail";
                     return next(statusError);
@@ -405,19 +398,18 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
 
                 // Construct employee object to be inserted
                 array.push({
-                    firstName: employee?.firstName,
-                    lastName: employee?.lastName,
-                    email: employee?.email,
+                    firstName: employee?.__EMPTY,
+                    lastName: employee?.__EMPTY_1,
+                    email: employee?.__EMPTY_6,
                     profile: {
-                        phone: employee?.phone,
+                        phone: (employee?.__EMPTY_3).toLocaleString(),
                         address: {
-                            street: employee?.street,
-                            city: employee?.city,
-                            state: employee?.state,
-                            zip: employee?.zipcode
+                            street: employee?.__EMPTY_7,
+                            city: employee?.__EMPTY_4,
+                            state: employee?.__EMPTY_2,
+                            zip: `${employee?.__EMPTY_5}`
                         }
                     },
-                    notes: employee?.notes,
                     roleId: role.id, // Use the role id retrieved from the database
                     companyId: companyid
                 });
@@ -426,9 +418,7 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
 
         // Insert bulk employees into the database
         const employees = await prisma.user.createMany({
-            data: [
-                ...array,
-            ]
+            data: array,
         });
 
         // Return success response
@@ -441,3 +431,4 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
         next(statusError);
     }
 }
+

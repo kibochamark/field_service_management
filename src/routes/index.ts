@@ -40,7 +40,7 @@ routes.get("/:companyid/company", authenticateToken, getCompany)
 routes.post("/company", authenticateToken, createCompany);
 routes.patch("/company", authenticateToken, updateCompany);
 routes.post("/employee", authenticateToken, createEmployee);
-routes.post("/employee/bulk", authenticateToken, createBulkEmployees);
+routes.post("/employee/bulk", authenticateToken, upload.single("file"), createBulkEmployees);
 routes.patch("/:employeeid/employee", authenticateToken, updateEmployee);
 routes.delete("/:employeeid/employee", authenticateToken, deleteEmployee);
 routes.delete("/:companyid/company", authenticateToken, deleteCompany)
