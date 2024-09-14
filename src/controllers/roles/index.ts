@@ -11,7 +11,7 @@ const roleSchema = Joi.object({
     description: Joi.string().required(),
     permissions: Joi.array<{
         id: string;
-        key:string;
+        key: string;
         value: string;
     }>(),
 });
@@ -59,7 +59,7 @@ export async function createRole(req: express.Request, res: express.Response, ne
         let error: GlobalError = new Error("")
         error.statusCode = 500
         error.status = "server error"
-        error.message=e.message
+        error.message = e.message
         next(error)
     }
 }
@@ -72,7 +72,11 @@ export const getRoles = async (req: express.Request, res: express.Response, next
     try {
         const roles = await prisma.role.findMany()
 
-        return res.status(200).json(roles).end()
+
+        return res.status(200).json({
+            status: "success",
+            data: roles
+        })
 
     } catch (e: any) {
         statusError.message = e.message
