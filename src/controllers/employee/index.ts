@@ -341,13 +341,11 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
         var workbook = XLSX.readFile(req?.file?.path as string);
         var sheet_name_list = workbook.SheetNames;
         var xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
-        // console.log(xlData); // To inspect data from the Excel file
+        console.log(xlData); // To inspect data from the Excel file
 
-        // Remove header rows, only process actual employee data
-        const jsonArray = xlData.slice(3); // Skip first two rows (headers and labels)
-
+        let jsonArray = xlData
         // Validate request body 
-        
+
         const { error, value } = retrieveEmployeesSchema.validate(req.body, { abortEarly: false });
 
         if (error) {
@@ -386,12 +384,12 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
             for (let employee of jsonArray as any) {
                 // Lookup role by name from the Excel data
                 const role = await prisma.role.findUnique({
-                    where: { name: employee["__EMPTY_8"] }, // Match role names in the Excel sheet (e.g., "business admin", "dispatcher")
+                    where: { name: employee["role"] }, // Match role names in the Excel sheet (e.g., "business admin", "dispatcher")
                     select: { id: true, name: true }
                 });
 
                 if (!role) {
-                    statusError = new Error(`Role ${employee.__EMPTY_9} not found for ${employee.__EMPTY} ${employee.__EMPTY_1}`);
+                    statusError = new Error(`Role ${employee.role} not found for ${employee.firstName} ${employee.lastName}`);
                     statusError.statusCode = 400;
                     statusError.status = "fail";
                     return next(statusError);
@@ -399,16 +397,16 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
 
                 // Construct employee object to be inserted
                 array.push({
-                    firstName: employee?.__EMPTY,
-                    lastName: employee?.__EMPTY_1,
-                    email: employee?.__EMPTY_6,
+                    firstName: employee?.firstName,
+                    lastName: employee?.lastName,
+                    email: employee?.email,
                     profile: {
-                        phone: (employee?.__EMPTY_3).toLocaleString(),
+                        phone: (employee?.phone).toLocaleString(),
                         address: {
-                            street: employee?.__EMPTY_7,
-                            city: employee?.__EMPTY_4,
-                            state: employee?.__EMPTY_2,
-                            zip: `${employee?.__EMPTY_5}`
+                            street: employee?.street,
+                            city: employee?.city,
+                            state: employee?.state,
+                            zip: `${employee?.zip}`
                         }
                     },
                     roleId: role.id, // Use the role id retrieved from the database
