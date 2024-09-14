@@ -478,7 +478,6 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
             }
         })
 
-        console.log(roleId, roleofnewuser, 'new user')
 
         const company = await prisma.company.findUnique({
             where: {
@@ -489,6 +488,10 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
             }
         })
 
+        // retrieve config that checks if business owner already exists
+
+        const config= await prisma.config.findFirst()
+
         if ((role?.role.name !== "business owner") && (role?.role.name !== "business admin")) {
             statusError.statusCode = 400
             statusError.status = "fail"
@@ -497,12 +500,22 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
         }
 
-        if (roleofnewuser?.name !== "business admin") {
+        if (config?.businessownerexistense) {
             statusError.statusCode = 400
             statusError.status = "fail"
             statusError.message = "We can only have one business owner"
             return next(statusError)
         }
+
+        
+        if (roleofnewuser?.name === "client") {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "You cant add this role"
+            return next(statusError)
+        }
+
+
 
         if (!company) {
             statusError.statusCode = 400

@@ -243,6 +243,13 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                 next(statusError)
             }
 
+            // update config table to set existence of a business owner, 
+            await prisma.config.create({
+                data:{
+                    businessownerexistense:true
+                }
+            })
+
             // generate token
             const accessToken = generateAccessToken(newuser?.id)
             const refreshToken = generateRefreshToken(newuser.id)

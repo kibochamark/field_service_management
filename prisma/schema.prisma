@@ -224,6 +224,13 @@ model Payment {
   Invoice Invoice[]
 }
 
+
+model Config{
+    id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  businessownerexistense Boolean
+}
+
 // ----------------------- composite models ---------------------
 // address
 type Address {
