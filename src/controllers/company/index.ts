@@ -500,7 +500,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
         }
 
-        if (config?.businessownerexistense) {
+        if (config?.businessownerexistense && roleofnewuser?.name === "business owner") {
             statusError.statusCode = 400
             statusError.status = "fail"
             statusError.message = "We can only have one business owner"
