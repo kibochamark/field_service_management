@@ -205,7 +205,7 @@ export const updateEmployee = async (req: Request, res: Response, next: NextFunc
 
 
 
-            if (roleofupdateduser?.name !== "business admin") {
+            if (roleofupdateduser?.name === "business owner") {
                 statusError.statusCode = 400
                 statusError.status = "fail"
                 statusError.message = "We can only have one business owner"
@@ -224,7 +224,6 @@ export const updateEmployee = async (req: Request, res: Response, next: NextFunc
             ...(permissions && { permissions }),
         };
 
-        console.log(data)
 
 
         const employee = await prisma.user.update({
@@ -244,7 +243,6 @@ export const updateEmployee = async (req: Request, res: Response, next: NextFunc
         });
 
 
-        console.log(employee)
 
         return res.status(201).json(employee).end()
 
