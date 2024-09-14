@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express"
 import Joi from "joi"
 import { GlobalError } from "../../types/errorTypes"
 import prisma from "../../utils/prismaConfig"
+import csv from "csvtojson/v2"
+
 
 const retrieveEmployeesSchema = Joi.object({
     companyid: Joi.string().required()
@@ -325,5 +327,117 @@ export const deleteEmployee = async (req: Request, res: Response, next: NextFunc
         statusError.status = "server error"
         statusError.message = e.message
         next(statusError)
+    }
+}
+
+
+// create bulk employees
+export async function createBulkEmployees(req: Request, res: Response, next: NextFunction) {
+    let statusError: GlobalError = new Error("");
+
+    try {
+        // Parse the Excel or CSV file to get employee data
+        let jsonArray = await csv().fromFile(req.file?.path as string);
+
+        // Validate request body
+        const { error, value } = retrieveEmployeesSchema.validate(req.body, { abortEarly: false });
+
+        if (error) {
+            statusError = new Error(JSON.stringify(
+                {
+                    error: error.details.map(detail => detail.message),
+                }
+            ));
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            next(statusError);
+            return;
+        }
+
+        const { companyid } = value;
+
+        const user = req.user as any
+
+        const userrole = await prisma.user.findUnique({
+            where: {
+                id: user?.userId
+            },
+            select: {
+                role: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+
+
+
+        if (userrole?.role.name !== "super admin" && userrole?.role.name !== "business owner" && userrole?.role.name !== "business admin") {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "You are not allowed to perform this request"
+            return next(statusError)
+        }
+
+
+        let array: any = [];
+
+        if (jsonArray.length > 0) {
+            for (let employee of jsonArray) {
+                // Lookup role by name from the database
+                const role = await prisma.role.findUnique({
+                    where: {
+                        name: employee.role // Match role names in the Excel sheet (e.g., "business admin", "dispatcher")
+                    },
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                });
+
+                if (!role) {
+                    statusError = new Error(`Role ${employee.role} not found for ${employee.firstName} ${employee.lastName}`);
+                    statusError.statusCode = 400;
+                    statusError.status = "fail";
+                    return next(statusError);
+                }
+
+                // Construct employee object to be inserted
+                array.push({
+                    firstName: employee?.firstName,
+                    lastName: employee?.lastName,
+                    email: employee?.email,
+                    profile: {
+                        phone: employee?.phone,
+                        address: {
+                            street: employee?.street,
+                            city: employee?.city,
+                            state: employee?.state,
+                            zip: employee?.zipcode
+                        }
+                    },
+                    notes: employee?.notes,
+                    roleId: role.id, // Use the role id retrieved from the database
+                    companyId: companyid
+                });
+            }
+        }
+
+        // Insert bulk employees into the database
+        const employees = await prisma.user.createMany({
+            data: [
+                ...array,
+            ]
+        });
+
+        // Return success response
+        res.status(200).json(employees).end();
+    } catch (e: any) {
+        // Handle server error
+        statusError.statusCode = 500;
+        statusError.status = "server error";
+        statusError.message = e.message;
+        next(statusError);
     }
 }

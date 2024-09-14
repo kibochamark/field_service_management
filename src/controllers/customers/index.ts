@@ -470,7 +470,6 @@ export async function createBulkCustomers(req: Request, res: Response, next: Nex
         }
 
 
-        console.log(array)
 
 
 
