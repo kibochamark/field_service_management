@@ -21,7 +21,7 @@ model User {
   lastName      String
   googleID      String?
   appleID       String?
-  password      String?  @unique
+  password      String?  
   salt          String?  @default("")
   profile       Profile?
   enabled       Boolean  @default(false)

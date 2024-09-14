@@ -208,7 +208,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                     googleID: googleId,
                     firstName: firstname,
                     lastName: lastname,
-                    roleId: role.id,
+                    roleId: role.id
+
                 },
                 select: {
                     profile: true,

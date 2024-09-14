@@ -22,6 +22,7 @@ const companySchema = Joi.object({
         street: Joi.string().required(),
         city: Joi.string().required(),
         zip: Joi.string().required(),
+        state:Joi.string().required(),
         otherInfo: Joi.string()
     }),
     subscriptionId: Joi.string()
@@ -151,7 +152,16 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
                 image: imageUrl ? {
                     url: imageUrl,
                 } : undefined,
-                address,
+                address:{
+                    set:{
+                        city:address.city,
+                        zip:address.zip,
+                        street:address.street,
+                        state:address.state,
+                        otherinfo:address.otherinfo ?? ""
+
+                    }
+                },
                 users: {
                     connect: { id: user?.id },
                 },
