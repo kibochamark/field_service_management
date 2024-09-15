@@ -83,7 +83,8 @@ model Company {
   description  String
   companysize  CompanySize @default(Owner)
   email        String      @unique
-  address      Address
+  address      String
+  stateinfo    Address
   poBox        String
   addressline1 String
   addressline2 String?
@@ -234,7 +235,6 @@ model Config{
 // ----------------------- composite models ---------------------
 // address
 type Address {
-  street    String
   city      String
   zip       String
   state     String

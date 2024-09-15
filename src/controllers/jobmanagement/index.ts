@@ -10,7 +10,6 @@ const JobSchema = Joi.object({
     description: Joi.string().required(),
     jobType: Joi.string().required(),
     location: Joi.object({
-        street: Joi.string().required(),
         city: Joi.string().required(),
         zip: Joi.string().required(),
         state: Joi.string().required(),
@@ -97,7 +96,6 @@ export const createJob=async(
                 dispatcherId,
                 location:{
                     set:{
-                        street:location.street,
                         city:location.city,
                         zip:location.zip,
                         state:location.state,

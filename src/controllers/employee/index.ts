@@ -406,7 +406,6 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
                     profile: {
                         phone: (employee?.phone).toLocaleString(),
                         address: {
-                            street: employee?.street,
                             city: employee?.city,
                             state: employee?.state,
                             zip: `${employee?.zip}`

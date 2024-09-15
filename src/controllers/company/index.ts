@@ -5,6 +5,7 @@ import Joi, { object } from "joi";
 import { hashPassword } from "../../utils/hashpasswordGenereator";
 import { generateAccessToken, generateRefreshToken } from "utils/tokens";
 import { permission } from "process";
+import { CompanySize } from "@prisma/client";
 
 // validation schema
 const companySchema = Joi.object({
@@ -18,8 +19,8 @@ const companySchema = Joi.object({
     imageUrl: Joi.object({
         url: Joi.string()
     }),
-    address: Joi.object({
-        street: Joi.string().required(),
+    address:Joi.string().required(),
+    stateinfo: Joi.object({
         city: Joi.string().required(),
         zip: Joi.string().required(),
         state:Joi.string().required(),
@@ -39,8 +40,8 @@ const updateCompanySchema = Joi.object({
     imageUrl: Joi.object({
         url: Joi.string()
     }),
-    address: Joi.object({
-        street: Joi.string(),
+    address:Joi.string(),
+    stateinfo: Joi.object({
         city: Joi.string(),
         zip: Joi.string(),
         otherInfo: Joi.string()
@@ -95,6 +96,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
         subscriptionId,
         imageUrl,
         address,
+        stateinfo
     } = value;
 
     const decodeduser = req.user as any
@@ -152,11 +154,11 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
                 image: imageUrl ? {
                     url: imageUrl,
                 } : undefined,
-                address:{
+                address,
+                stateinfo:{
                     set:{
                         city:address.city,
                         zip:address.zip,
-                        street:address.street,
                         state:address.state,
                         otherinfo:address.otherinfo ?? ""
 
@@ -347,6 +349,7 @@ export const updateCompany = async (req: Request, res: Response, next: NextFunct
             addressline2,
             subscriptionId,
             imageUrl,
+            stateinfo,
             address,
         } = value;
 
@@ -408,6 +411,7 @@ export const updateCompany = async (req: Request, res: Response, next: NextFunct
                     url: imageUrl,
                 } : undefined,
                 address,
+                stateinfo
             }
         })
 
@@ -603,4 +607,31 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
         error.status = "server error"
         next(error)
     }
+}
+
+
+
+// retrieve comapny size
+export async function getCompanySize(req:Request, res:Response, next:NextFunction){
+    // initialize global error stack
+    let statusError: GlobalError = new Error("")
+
+    try{
+        
+        let companysizedict = {
+            "owner": CompanySize.Owner,
+            "5":CompanySize.Five,
+            "10":CompanySize.Ten,
+            "10+":CompanySize.Tenplus
+        }
+
+        return res.status(200).json(companysizedict).end()
+
+    }catch(e:any){
+        statusError.status = "fail",
+        statusError.statusCode = 500
+        statusError.message ="server error - failed to retrieve data"
+        next(statusError)
+    }
+
 }
