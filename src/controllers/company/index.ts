@@ -157,10 +157,10 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
                 address,
                 stateinfo:{
                     set:{
-                        city:address.city,
-                        zip:address.zip,
-                        state:address.state,
-                        otherinfo:address.otherinfo ?? ""
+                        city:stateinfo.city,
+                        zip:stateinfo.zip,
+                        state:stateinfo.state,
+                        otherinfo:stateinfo.otherinfo ?? ""
 
                     }
                 },
