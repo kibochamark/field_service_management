@@ -337,12 +337,14 @@ export const deleteEmployee = async (req: Request, res: Response, next: NextFunc
 export async function createBulkEmployees(req: Request, res: Response, next: NextFunction) {
     let statusError: GlobalError = new Error("");
 
+    // console.log(req.file?.buffer, "bff")
+
     try {
         // Parse the Excel file using XLSX
-        var workbook = XLSX.readFile(req?.file?.path as string);
+        const workbook = XLSX.read(req.file?.buffer, { type: "buffer" });
         var sheet_name_list = workbook.SheetNames;
         var xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
-        console.log(xlData); // To inspect data from the Excel file
+        // console.log(xlData); // To inspect data from the Excel file
 
         let jsonArray = xlData
         // Validate request body 
