@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
+    "@vercel/blob": "^0.23.4",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "compression": "^1.7.4",
