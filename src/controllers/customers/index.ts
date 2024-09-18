@@ -4,6 +4,7 @@ import Joi from "joi";
 import prisma from "../../utils/prismaConfig";
 import csv from "csvtojson/v2"
 import { Client } from "@prisma/client";
+import * as XLSX from "xlsx"
 
 
 // validations schemas
@@ -13,7 +14,6 @@ const retrieveCustomersSchema = Joi.object({
 
 
 const CustomerSchema = Joi.object({
-    roleId: Joi.string().required(),
     companyId: Joi.string().required()
 })
 
@@ -71,7 +71,7 @@ export async function getCustomers(req: Request, res: Response, next: NextFuncti
 
         const { companyid } = value
 
-        console.log(companyid)
+        // console.log(companyid)
         // retrieve user
 
         // const company = await prisma.company.findFirst({
@@ -91,14 +91,22 @@ export async function getCustomers(req: Request, res: Response, next: NextFuncti
         // }
 
         const customers = await prisma.client.findMany({
-            where:{
-                companyId:companyid
+            where: {
+                companyId: companyid
             }
         })
 
-        return res.status(200).json(customers).end()
+        // console.log(customers)
+
+        
+            return res.status(200).json({
+                status: "success",
+                data: [...customers]
+            })
+        
 
 
+        
 
     } catch (e: any) {
         statusError.statusCode = 500
@@ -417,14 +425,25 @@ export async function deleteCustomer(req: Request, res: Response, next: NextFunc
 
 
 
-// create bulk customers
 
+
+
+// create bulk customers
 export async function createBulkCustomers(req: Request, res: Response, next: NextFunction) {
     let statusError: GlobalError = new Error("")
 
     try {
+        // Parse the Excel file using XLSX
+        const workbook = XLSX.read(req.file?.buffer, { type: "buffer" });
+        var sheet_name_list = workbook.SheetNames;
+        var xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+        console.log(xlData); // To inspect data from the Excel file
 
-        let jsonArray = await csv().fromFile(req.file?.path as string);
+        let jsonArray: any = xlData
+
+
+        // Validate request body 
+
 
         const { error, value } = CustomerSchema.validate(req.body, { abortEarly: false });
 
@@ -440,14 +459,31 @@ export async function createBulkCustomers(req: Request, res: Response, next: Nex
 
         }
 
-        const { roleId, companyId } = value
+        const { companyId } = value
 
 
         let array: any = []
 
+        // retrieve client role id
+        const role = await prisma.role.findFirst({
+            where: {
+                name: "client"
+            },
+            select: {
+                id: true
+            }
+        })
+
+        if (!role) {
+            statusError.message = "Role not found"
+            statusError.statusCode = 404
+            statusError.status = "Not found"
+            next(statusError)
+        }
+
 
         if (jsonArray.length > 0) {
-            array = jsonArray.map((client) => {
+            array = jsonArray.map((client: { firstName: any; lastName: any; email: any; phone: any; city: any; state: any; zipcode: any; notes: any; }) => {
                 return {
                     firstName: client?.firstName,
                     lastName: client?.lastName,
@@ -455,24 +491,24 @@ export async function createBulkCustomers(req: Request, res: Response, next: Nex
                     profile: {
                         phone: client?.phone,
                         address: {
-                            street: client?.street,
                             city: client?.city,
                             state: client?.state,
                             zip: client?.zipcode
                         }
                     },
                     notes: client?.notes,
-                    roleId: roleId,
+                    roleId: role?.id,
                     companyId: companyId
                 }
             })
+
 
         }
 
 
 
 
-
+        // create many customers
 
         const customers = await prisma.client.createMany({
             data: [
@@ -523,7 +559,7 @@ export async function getCustomersInfo(req: Request, res: Response, next: NextFu
         const number_of_active_customers = await prisma.client.count({
             where: {
                 companyId: companyid,
-                enabled:true
+                enabled: true
             },
         })
         const number_of_customers = await prisma.client.count({
@@ -534,7 +570,7 @@ export async function getCustomersInfo(req: Request, res: Response, next: NextFu
         const number_of_inactive_customers = await prisma.client.count({
             where: {
                 companyId: companyid,
-                enabled:false
+                enabled: false
             },
         })
 
@@ -554,3 +590,6 @@ export async function getCustomersInfo(req: Request, res: Response, next: NextFu
     }
 
 }
+
+
+
