@@ -78,7 +78,7 @@ export const createJob=async(
             next(statusError)
         }
 
-        if(role?.name !== "business admin" && role?.name !== "dispatcher"){
+        if(role?.name !== "business owner" && role?.name !== "dispatcher"){
             statusError.message = "You are not authorized to perform this action"
             statusError.statusCode = 400
             statusError.status = "fail"
@@ -143,3 +143,65 @@ export const createJob=async(
     }
 
 }
+
+export const getJobById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const jobId = req.params.id;
+
+    // Fetch job by its ID
+    const job = await prisma.job.findUnique({
+      where: {
+        id: jobId,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        jobType: true,
+        client: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        dispatcher: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        technician: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        jobschedule: true,
+        location: true,
+        createdAt: true,
+      },
+    });
+
+    // Check if job was found
+    if (!job) {
+      statusError.message = "Job not found";
+      statusError.statusCode = 404;
+      statusError.status = "fail";
+      return next(statusError);
+    }
+
+    // Return job details
+    return res.status(200).json(job).end();
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 501;
+    statusError.message = e.message;
+    return next(statusError);
+  }
+};

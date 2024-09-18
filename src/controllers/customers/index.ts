@@ -98,15 +98,15 @@ export async function getCustomers(req: Request, res: Response, next: NextFuncti
 
         // console.log(customers)
 
-        if (customers.length > 0) {
+        
             return res.status(200).json({
                 status: "success",
                 data: [...customers]
             })
-        }
+        
 
 
-        return res.status(404)
+        
 
     } catch (e: any) {
         statusError.statusCode = 500
