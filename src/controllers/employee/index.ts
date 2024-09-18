@@ -110,6 +110,7 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
     } catch (e: any) {
         statusError.statusCode = 500
         statusError.status = "server error"
+        statusError.message = e.message
         return next(statusError)
     }
 }

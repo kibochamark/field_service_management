@@ -16,6 +16,7 @@ const JobSchema = Joi.object({
         otherinfo: Joi.string()
     }),
     clientId: Joi.string().required(),
+    companyId: Joi.string().required(),
     dispatcherId: Joi.string().required(),
     technicianId: Joi.string(),
     jobSchedule: Joi.object({
@@ -54,6 +55,7 @@ export const createJob=async(
              jobType,
             location,
             clientId,
+            companyId,
             dispatcherId,
             technicianId,
             jobSchedule
@@ -62,12 +64,15 @@ export const createJob=async(
         const user = req.user as any
 
         // check the role of user if it matches business admin / dispatcher
-        const role = await prisma.role.findFirst({
+        const role = await prisma.user.findFirst({
             where: {
                 id: user?.userId
             },
             select: {
-                name:true
+                role:{
+                  select:{ name:true 
+                  }
+                }
             }
         })
 
@@ -77,8 +82,9 @@ export const createJob=async(
             statusError.status = "fail"
             next(statusError)
         }
+        console.log(role, "role")
 
-        if(role?.name !== "business owner" && role?.name !== "dispatcher"){
+        if(role?.role.name !== "business owner" && role?.role.name !== "dispatcher"){
             statusError.message = "You are not authorized to perform this action"
             statusError.statusCode = 400
             statusError.status = "fail"
@@ -93,6 +99,7 @@ export const createJob=async(
                 description,
                 jobType,
                 clientId,
+                companyId,
                 dispatcherId,
                 location:{
                     set:{
