@@ -13,7 +13,7 @@ import { createBulkEmployees, deleteEmployee, getEmployees, updateEmployee } fro
 import { createBulkCustomers, createCustomer, deleteCustomer, getCustomer, getCustomers, getCustomersInfo, updateCustomer } from "../controllers/customers"
 import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
-import { createJob } from "../controllers/jobmanagement"
+import { addBulkJobTypes, createJob, getJobTypes } from "../controllers/jobmanagement"
 import { UpdateCompanyUserProfileInformation } from "../controllers/profilemanagement"
 
 
@@ -65,6 +65,8 @@ routes.delete("/customer/:id", authenticateToken, deleteCustomer);
 
 // job
 routes.post("/job", authenticateToken, createJob);
+routes.get("/jobtype", getJobTypes);
+routes.post("/addjobtype", addBulkJobTypes);
 
 
 

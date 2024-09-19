@@ -122,7 +122,8 @@ model Job {
   id           String      @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   description  String
-  jobType      String
+  jobType      JobType     @relation(fields: [jobTypeId], references: [id])
+  jobTypeId    String      @db.ObjectId
   location     Address
   status       JobStatus   @default(NOTASSIGNED)
   dispatcher   User?       @relation(name: "dispatcher", fields: [dispatcherId], references: [id])
@@ -233,6 +234,15 @@ model Config{
     id            String   @id @default(auto()) @map("_id") @db.ObjectId
 
   businessownerexistense Boolean
+}
+
+model JobType {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique // e.g., "Full-time", "Part-time", "Contract"
+ 
+
+  // Relation to Job
+  jobs        Job[]
 }
 
 // ----------------------- composite models ---------------------
