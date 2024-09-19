@@ -132,7 +132,7 @@ model Job {
   technicianId String?     @db.ObjectId
   client       Client      @relation(fields: [clientId], references: [id])
   clientId     String      @db.ObjectId
-  jobschedule  JobSchedule
+  jobschedule  JobSchedule?
   company      Company     @relation(fields: [companyId], references: [id])
   companyId    String      @db.ObjectId
 

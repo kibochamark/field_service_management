@@ -129,13 +129,13 @@ export const createJob = async (
             otherinfo: location?.otherinfo ?? ""
           }
         },
-        jobschedule: {
-          set: {
-            startDate: jobSchedule.startDate,
-            endDate: jobSchedule.endDate,
-            recurrence: jobSchedule.recurrence ?? "DAILY"
-          }
-        }
+        // jobschedule: {
+        //   set: {
+        //     startDate: jobSchedule.startDate,
+        //     endDate: jobSchedule.endDate,
+        //     recurrence: jobSchedule.recurrence ?? "DAILY"
+        //   }
+        // }
       },
       select: {
         id: true,
