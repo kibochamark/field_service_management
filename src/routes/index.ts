@@ -9,7 +9,7 @@ import { createRole, deleteRoles, getRoles } from "../controllers/roles"
 import { Router } from "express"
 import { validateEmail } from "../middleware/emailValidator"
 import { authenticateToken } from "../middleware/index"
-import { createBulkEmployees, deleteEmployee, getEmployees, updateEmployee } from "../controllers/employee"
+import { createBulkEmployees, deleteEmployee, getEmployees, getTechnician, updateEmployee } from "../controllers/employee"
 import { createBulkCustomers, createCustomer, deleteCustomer, getCustomer, getCustomers, getCustomersInfo, updateCustomer } from "../controllers/customers"
 import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
@@ -51,6 +51,7 @@ routes.delete("/:companyid/company", authenticateToken, deleteCompany)
 // company employees
 routes.get("/:companyid/employees", authenticateToken, getEmployees)
 routes.put("/:userid/profile", authenticateToken, UpdateCompanyUserProfileInformation)
+routes.get("/:companyid/technician", authenticateToken, getTechnician)
 
 
 
