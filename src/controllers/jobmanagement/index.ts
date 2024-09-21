@@ -7,33 +7,31 @@ import prisma from "../../utils/prismaConfig";
 const JobSchema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().required(),
-  jobTypeId: Joi.string().required(), // Updated to refer to JobType ID
+  jobTypeId: Joi.string().required(),
   location: Joi.object({
-    city: Joi.string().required(),
-    zip: Joi.string().required(),
-    state: Joi.string().required(),
-    otherinfo: Joi.string()
-  }),
-  clientId: Joi.string().required(),
+    city: Joi.string().optional(),
+    zip: Joi.string().optional(),
+    state: Joi.string().optional(),
+    otherinfo: Joi.string().optional(),
+  }).required(),
+  clientId: Joi.array().items(Joi.string()).required(), // Accepting multiple client IDs
   companyId: Joi.string().required(),
   dispatcherId: Joi.string().required(),
-  technicianId: Joi.string(),
+  technicianId: Joi.array().items(Joi.string().optional()), // Optional multiple technician IDs
   jobSchedule: Joi.object({
     startDate: Joi.date().required(),
-    endDate: Joi.date(),
-    recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY")
-  })
+    endDate: Joi.date().optional(),
+    recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY").optional(),
+  }).required(),
 });
 
-export const createJob = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+
+
+export const createJob = async (req: Request, res: Response, next: NextFunction) => {
   let statusError: GlobalError = new Error("");
 
   try {
-    // validate request body against our jobSchema
+    // Validate request body against jobSchema
     const { error, value } = JobSchema.validate(req.body, { abortEarly: false });
 
     if (error) {
@@ -47,123 +45,72 @@ export const createJob = async (
       return next(statusError);
     }
 
+    // Destructure the validated fields
     const {
       name,
       description,
-      jobTypeId, // Get jobTypeId instead of jobType string
+      jobTypeId,
       location,
-      clientId,
+      clientId = [], // Default to an empty array if undefined
       companyId,
       dispatcherId,
-      technicianId,
+      technicianId = [], // Default to an empty array if undefined
       jobSchedule
     } = value;
 
+    // User authorization and role checks
     const user = req.user as any;
-
-    // Check the role of user if it matches business admin / dispatcher
     const role = await prisma.user.findFirst({
-      where: {
-        id: user?.userId
-      },
-      select: {
-        role: {
-          select: {
-            name: true
-          }
-        }
-      }
+      where: { id: user?.userId },
+      select: { role: { select: { name: true } } }
     });
 
-    if (!role) {
-      statusError.message = "Seems the role of the user does not exist in the system";
-      statusError.statusCode = 400;
-      statusError.status = "fail";
-      next(statusError);
-    }
-
-    if (role?.role.name !== "business owner" && role?.role.name !== "dispatcher") {
+    if (!role || (role?.role.name !== "business owner" && role?.role.name !== "dispatcher")) {
       statusError.message = "You are not authorized to perform this action";
       statusError.statusCode = 400;
       statusError.status = "fail";
       return next(statusError);
     }
 
-    // Create job instance in the database
+    // Create the job instance
     const job = await prisma.job.create({
       data: {
         name,
         description,
-        jobType: {
-          connect: {
-            id: jobTypeId // Link the job type by its ID
-          }
+        jobType: { connect: { id: jobTypeId } },
+        location: location,
+        company: { connect: { id: companyId } },
+        dispatcher: { connect: { id: dispatcherId } },
+        clients: {
+          // Create or connect client records (depending on whether they're new or existing)
+          create: clientId.map((clientId: string) => ({
+            client: { connect: { id: clientId } }
+          }))
         },
-        client: {
-          connect: {
-            id: clientId // Link the client by its ID
-          }
-        },
-        company: {
-          connect: {
-            id: companyId // Link the company by its ID
-          }
-        },
-        dispatcher: {
-          connect: {
-            id: dispatcherId // Link the dispatcher by its ID
-          }
-        },
-        technician: technicianId
-          ? {
-              connect: {
-                id: technicianId // Link the technician by its ID (optional)
-              }
-            }
-          : undefined, // Handle the optional technician
-        location: {
-          set: {
-            city: location.city,
-            zip: location.zip,
-            state: location.state,
-            otherinfo: location?.otherinfo ?? ""
-          }
+        technicians: {
+          // Create or connect technician records (if technicianId is provided)
+          create: technicianId.map((techId: string) => ({
+            technician: { connect: { id: techId } }
+          }))
         },
         // jobschedule: {
-        //   set: {
+        //   create: {
         //     startDate: jobSchedule.startDate,
         //     endDate: jobSchedule.endDate,
-        //     recurrence: jobSchedule.recurrence ?? "DAILY"
+        //     recurrence: jobSchedule.recurrence
         //   }
         // }
       },
       select: {
         id: true,
         name: true,
-        client: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        },
-        dispatcher: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        },
-        technician: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        },
-        jobschedule: true,
+        clients: { select: { client: { select: { firstName: true, lastName: true } } } },
+        technicians: { select: { technician: { select: { firstName: true, lastName: true } } } },
         createdAt: true
       }
     });
-    
 
+    // Respond with the created job
     return res.status(201).json(job).end();
   } catch (e: any) {
     statusError.status = "fail";
@@ -172,6 +119,9 @@ export const createJob = async (
     next(statusError);
   }
 };
+
+
+
 
 export const getJobTypes = async (req: Request, res: Response, next: NextFunction) => {
   let statusError: GlobalError = new Error("");
