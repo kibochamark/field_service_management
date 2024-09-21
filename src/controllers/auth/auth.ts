@@ -188,7 +188,7 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
 
 
 
-            return res.status(201).json({
+            return res.status(200).json({
                 status: "success",
                 data: {
                     token: {

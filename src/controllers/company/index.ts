@@ -101,7 +101,7 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
 
     const decodeduser = req.user as any
 
-    console.log(decodeduser)
+    // console.log(decodeduser)
 
     try {
         // Find the user to ensure they exist
