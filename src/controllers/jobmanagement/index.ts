@@ -11,18 +11,17 @@ const JobSchema = Joi.object({
   location: Joi.object({
     city: Joi.string().required(),
     zip: Joi.string().required(),
-    state: Joi.string().required(),
-   
+    state: Joi.string().required(),   
   }).required(),
   clientId: Joi.array().items(Joi.string()).required(), // Accepting multiple client IDs
   companyId: Joi.string().required(),
   dispatcherId: Joi.string().required(),
   technicianId: Joi.array().items(Joi.string().optional()), // Optional multiple technician IDs
-  jobSchedule: Joi.object({
-    startDate: Joi.date().required(),
-    endDate: Joi.date().optional(),
-    recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY").optional(),
-  }).required(),
+  // jobSchedule: Joi.object({
+  //   startDate: Joi.date().required(),
+  //   endDate: Joi.date().optional(),
+  //   recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY").optional(),
+  // }).required(),
 });
 export const createJob = async (req: Request, res: Response, next: NextFunction) => {
   let statusError: GlobalError = new Error("");
