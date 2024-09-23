@@ -201,7 +201,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         companyId: existinguser?.companyId ?? "",
                         role :existinguser?.role?.name,
                         name:existinguser?.firstName + " " + existinguser?.lastName,
-                        email:existinguser?.email
+                        email:existinguser?.email,
+                        userId: existinguser?.id
                     }
                 }
             }).end()
@@ -270,7 +271,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         hascompany: newuser?.companyId ? true : false,
                         role:newuser?.role?.name,
                         name:newuser?.firstName + " " + newuser?.lastName,
-                        email:newuser?.email
+                        email:newuser?.email,
+                        userId: newuser?.id
                     },
                 }
             }).end()
@@ -319,7 +321,8 @@ export async function loginUser(req: express.Request, response: express.Response
             response.json({ accessToken, refreshToken, hascompany: user?.companyId ? true : false,   
                                       role:user?.role?.name,
                                       name:user?.firstName + " " + user?.lastName,
-                        email:user?.email
+                        email:user?.email,
+                        userId: user?.id
             });
         })(req, response, next);
     } catch (e: any) {
