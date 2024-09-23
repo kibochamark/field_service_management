@@ -170,6 +170,9 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
             },
             select:{
                 id:true,
+                email:true,
+                firstName:true,
+                lastName:true,
                 googleID:true,
                 companyId:true,
                 role:{
@@ -188,7 +191,7 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
 
 
 
-            return res.status(201).json({
+            return res.status(200).json({
                 status: "success",
                 data: {
                     token: {
@@ -197,6 +200,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         hascompany: existinguser?.companyId ? true : false,
                         companyId: existinguser?.companyId ?? "",
                         role :existinguser?.role?.name,
+                        name:existinguser?.firstName + " " + existinguser?.lastName,
+                        email:existinguser?.email,
                         userId: existinguser?.id
                     }
                 }
@@ -265,8 +270,9 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         refreshToken,
                         hascompany: newuser?.companyId ? true : false,
                         role:newuser?.role?.name,
+                        name:newuser?.firstName + " " + newuser?.lastName,
+                        email:newuser?.email,
                         userId: newuser?.id
-
                     },
                 }
             }).end()
@@ -308,15 +314,15 @@ export async function loginUser(req: express.Request, response: express.Response
                 next(error)
             };
 
-            console.log(user, ",me")
 
             const accessToken = generateAccessToken(user.id);
             const refreshToken = generateRefreshToken(user.id)
 
             response.json({ accessToken, refreshToken, hascompany: user?.companyId ? true : false,   
                                       role:user?.role?.name,
-                           email:user?.email,
-                           name:user?.firstName + " " + user?.lastName
+                                      name:user?.firstName + " " + user?.lastName,
+                        email:user?.email,
+                        userId: user?.id
             });
         })(req, response, next);
     } catch (e: any) {
