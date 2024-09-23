@@ -9,11 +9,11 @@ import { createRole, deleteRoles, getRoles } from "../controllers/roles"
 import { Router } from "express"
 import { validateEmail } from "../middleware/emailValidator"
 import { authenticateToken } from "../middleware/index"
-import { createBulkEmployees, deleteEmployee, getEmployees, updateEmployee } from "../controllers/employee"
+import { createBulkEmployees, deleteEmployee, getEmployees, getTechnician, updateEmployee } from "../controllers/employee"
 import { createBulkCustomers, createCustomer, deleteCustomer, getCustomer, getCustomers, getCustomersInfo, updateCustomer } from "../controllers/customers"
 import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
-import { createJob } from "../controllers/jobmanagement"
+import { addBulkJobTypes, createJob, getAllJobs, getJobTypes } from "../controllers/jobmanagement"
 import { UpdateCompanyUserProfileInformation } from "../controllers/profilemanagement"
 
 
@@ -51,6 +51,7 @@ routes.delete("/:companyid/company", authenticateToken, deleteCompany)
 // company employees
 routes.get("/:companyid/employees", authenticateToken, getEmployees)
 routes.put("/:userid/profile", authenticateToken, UpdateCompanyUserProfileInformation)
+routes.get("/:companyid/technician", authenticateToken, getTechnician)
 
 
 
@@ -65,6 +66,9 @@ routes.delete("/customer/:id", authenticateToken, deleteCustomer);
 
 // job
 routes.post("/job", authenticateToken, createJob);
+routes.get("/jobtype", getJobTypes);
+routes.post("/addjobtype", addBulkJobTypes);
+routes.get("/:companyId/retrievejobs", authenticateToken, getAllJobs);
 
 
 

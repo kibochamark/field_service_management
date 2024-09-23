@@ -110,6 +110,7 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
     } catch (e: any) {
         statusError.statusCode = 500
         statusError.status = "server error"
+        statusError.message = e.message
         return next(statusError)
     }
 }
@@ -434,6 +435,87 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
         statusError.status = "server error";
         statusError.message = e.message;
         next(statusError);
+    }
+}
+
+export const getTechnician = async (req: Request, res: Response, next: NextFunction) => {
+    let statusError: GlobalError = new Error("")
+
+    try {
+        const { error, value } = retrieveEmployeesSchema.validate(req.params, { abortEarly: false });
+
+        if (error) {
+            statusError = new Error(JSON.stringify(
+                {
+                    error: error.details.map(detail => detail.message),
+                }
+            ))
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            return next(statusError)
+        }
+
+        const { companyid } = value
+
+        const user = req.user as any
+
+        const userrole = await prisma.user.findUnique({
+            where: {
+                id: user?.userId
+            },
+            select: {
+                role: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+
+        if (userrole?.role.name !== "super admin" && userrole?.role.name !== "business owner" && userrole?.role.name !== "dispatcher" && userrole?.role.name !== "business admin") {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "You are not allowed to perform this request"
+            return next(statusError)
+        }
+
+        // Filter employees who have the role of "technician"
+        const technicians = await prisma.user.findMany({
+            where: {
+                companyId: companyid,
+                role: {
+                    name: 'technician'
+                }
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                googleID: true,
+                appleID: true,
+                profile: {
+                    select: {
+                        phone: true
+                    }
+                },
+                createdAt: true,
+                role: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+
+        })
+        console.log(technicians, "techies")
+        return res.status(200).json(technicians)
+
+    } catch (e: any) {
+        statusError.statusCode = 500
+        statusError.status = "server error"
+        statusError.message = e.message
+        return next(statusError)
     }
 }
 

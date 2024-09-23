@@ -196,7 +196,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         refreshToken,
                         hascompany: existinguser?.companyId ? true : false,
                         companyId: existinguser?.companyId ?? "",
-                        role :existinguser?.role?.name
+                        role :existinguser?.role?.name,
+                        userId: existinguser?.id
                     }
                 }
             }).end()
@@ -263,7 +264,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         accessToken,
                         refreshToken,
                         hascompany: newuser?.companyId ? true : false,
-                        role:newuser?.role?.name
+                        role:newuser?.role?.name,
+                        userId: newuser?.id
 
                     },
                 }
