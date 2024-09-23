@@ -365,6 +365,9 @@ enum InvoiceStatus {
 enum CompanySize {
   Owner
   Five
-  Ten
   Tenplus
+  OneTen 
+  ElevenTwentyFive
+  TwentySixFifty
+  FiftyPlus
 }

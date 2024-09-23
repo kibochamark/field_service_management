@@ -619,10 +619,12 @@ export async function getCompanySize(req:Request, res:Response, next:NextFunctio
     try{
         
         let companysizedict = {
-            "owner": CompanySize.Owner,
-            "5":CompanySize.Five,
-            "10":CompanySize.Ten,
-            "10+":CompanySize.Tenplus
+            // "owner": CompanySize.Owner,
+            // "5":CompanySize.Five,
+            "1-10":CompanySize.OneTen,
+            "11-25":CompanySize.ElevenTwentyFive,
+            "26-50":CompanySize.TwentySixFifty,
+            "50+":CompanySize.FiftyPlus
         }
 
         return res.status(200).json(companysizedict).end()
