@@ -34,8 +34,10 @@ model User {
   DispatcherJob Job[]    @relation(name: "dispatcher")
   permissions   String[]
 
-  TechnicianJob Job[]     @relation(name: "technician")
+  
   Invoice       Invoice[]
+
+  JobTechnician JobTechnician[]
 }
 
 // Super Admin
@@ -72,8 +74,10 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Job     Job[]
+  
   Invoice Invoice[]
+
+  JobClient JobClient[]
 }
 
 //compamny / business
@@ -98,6 +102,7 @@ model Company {
   subscriptionId String?       @db.ObjectId
 
   Client Client[]
+  jobs   Job[]  
 }
 
 // roles
@@ -121,23 +126,46 @@ model Job {
   id           String      @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   description  String
-  jobType      String
-  location     Address
+  jobType      JobType     @relation(fields: [jobTypeId], references: [id])
+  jobTypeId    String      @db.ObjectId
+  location     Address?
   status       JobStatus   @default(NOTASSIGNED)
   dispatcher   User?       @relation(name: "dispatcher", fields: [dispatcherId], references: [id])
   dispatcherId String?     @db.ObjectId
-  technician   User?       @relation(name: "technician", fields: [technicianId], references: [id])
-  technicianId String?     @db.ObjectId
-  client       Client      @relation(fields: [clientId], references: [id])
-  clientId     String      @db.ObjectId
-  jobschedule  JobSchedule
+  clients      JobClient[] // Relations to handle multiple clients
+  technicians  JobTechnician[] // Relations to handle multiple technicians
+  jobschedule  JobSchedule?
+  company      Company     @relation(fields: [companyId], references: [id])
+  companyId    String      @db.ObjectId
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   Workflows Workflows[]
   Invoice   Invoice[]
 }
+
+
+
+model JobClient {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  jobId   String   @db.ObjectId
+  clientId String  @db.ObjectId
+
+  job     Job      @relation(fields: [jobId], references: [id])
+  client  Client   @relation(fields: [clientId], references: [id])
+}
+
+model JobTechnician {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  jobId       String   @db.ObjectId
+  technicianId String   @db.ObjectId
+
+  job        Job      @relation(fields: [jobId], references: [id])
+  technician User      @relation(fields: [technicianId], references: [id])
+}
+
+
 
 model SubscriptionPlan {
   id          String       @id @default(auto()) @map("_id") @db.ObjectId
@@ -232,6 +260,15 @@ model Config{
   businessownerexistense Boolean
 }
 
+model JobType {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique // e.g., "Full-time", "Part-time", "Contract"
+ 
+
+  // Relation to Job
+  jobs        Job[]
+}
+
 // ----------------------- composite models ---------------------
 // address
 type Address {
@@ -260,6 +297,9 @@ type JobSchedule {
   endDate    DateTime
   recurrence JobRecurrence @default(DAILY)
 }
+
+
+
 
 type WorkflowSteps {
   name   String
