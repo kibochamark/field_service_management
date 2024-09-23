@@ -314,7 +314,9 @@ export async function loginUser(req: express.Request, response: express.Response
             const refreshToken = generateRefreshToken(user.id)
 
             response.json({ accessToken, refreshToken, hascompany: user?.companyId ? true : false,   
-                                      role:user?.role?.name, userId: user?.id
+                                      role:user?.role?.name,
+                           email:user?.email,
+                           name:user?.firstName + " " + user?.lastName
             });
         })(req, response, next);
     } catch (e: any) {
