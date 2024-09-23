@@ -185,3 +185,24 @@ export const addBulkJobTypes = async (req: Request, res: Response, next: NextFun
     return next(statusError);
   }
 };
+
+export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { companyId } = req.params;
+
+    // Fetch all jobs that belong to the specified companyId
+    const jobs = await prisma.job.findMany({
+      where: { companyId },
+      
+    });   
+    // Return the list of jobs
+    return res.status(200).json({data:jobs});
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
