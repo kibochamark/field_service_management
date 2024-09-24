@@ -151,8 +151,7 @@ model JobClient {
   id      String   @id @default(auto()) @map("_id") @db.ObjectId
   jobId   String   @db.ObjectId
   clientId String  @db.ObjectId
-  name   String
-
+  
   job     Job      @relation(fields: [jobId], references: [id])
   client  Client   @relation(fields: [clientId], references: [id])
 }
@@ -161,7 +160,7 @@ model JobTechnician {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   jobId       String   @db.ObjectId
   technicianId String   @db.ObjectId
-  name     String
+ 
 
   job        Job      @relation(fields: [jobId], references: [id])
   technician User      @relation(fields: [technicianId], references: [id])
