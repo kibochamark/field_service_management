@@ -196,9 +196,11 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
 
     // Fetch all jobs that belong to the specified companyId
     const jobs = await prisma.job.findMany({
-      where: { companyId }, include: {clients: true, technicians:true}
+      where: { companyId }, include: {clients: true, technicians:true, }
       
-    });   
+    });  
+    
+    console.log(jobs, "them jobs")
     // Return the list of jobs
     return res.status(200).json({data:jobs});
   } catch (e: any) {
