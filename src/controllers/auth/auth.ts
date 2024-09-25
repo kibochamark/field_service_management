@@ -10,7 +10,7 @@ import prisma from "../../utils/prismaConfig";
 // validation schema
 const userSchema = Joi.object({
     firstname: Joi.string().required(),
-    lastname: Joi.string(),
+    lastname: Joi.string().required(),
     phonenumber: Joi.string().required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
@@ -21,7 +21,7 @@ const userSchema = Joi.object({
 
 const googleUser = Joi.object({
     firstname: Joi.string().required(),
-    lastname: Joi.string().required(),
+    lastname: Joi.string(),
     email: Joi.string().email().required(),
     googleId: Joi.string().required(),
 });
