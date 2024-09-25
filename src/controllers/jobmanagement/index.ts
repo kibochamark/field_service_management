@@ -47,12 +47,14 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
       description,
       jobTypeId,
       location,
-      clientId = [], // Default to an empty array if undefined
+      clientId, 
       companyId,
       dispatcherId,
-      technicianId = [], // Default to an empty array if undefined
+      technicianId, 
       jobSchedule
     } = value;
+
+    console.log(clientId, "client")
 
     // User authorization and role checks
     const user = req.user as any;
@@ -66,7 +68,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
       statusError.statusCode = 400;
       statusError.status = "fail";
       return next(statusError);
-    }
+        }
 
     // Create the job instance
     const job = await prisma.job.create({
@@ -194,9 +196,14 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
 
     // Fetch all jobs that belong to the specified companyId
     const jobs = await prisma.job.findMany({
-      where: { companyId },
+      where: { companyId }, include: {clients: {select:
+         {client:
+          {select:
+            {id:true, firstName:true, lastName:true}} }}, technicians:{select:{technician:{select:{id:true, firstName:true, lastName:true}}}}, jobType:{select:{id:true, name:true}}}
       
-    });   
+    });  
+    
+    console.log(jobs, "them jobs")
     // Return the list of jobs
     return res.status(200).json({data:jobs});
   } catch (e: any) {
