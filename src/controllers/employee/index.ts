@@ -508,7 +508,7 @@ export const getTechnician = async (req: Request, res: Response, next: NextFunct
             }
 
         })
-        console.log(technicians, "techies")
+        
         return res.status(200).json(technicians)
 
     } catch (e: any) {
