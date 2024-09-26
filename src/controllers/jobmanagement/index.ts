@@ -290,7 +290,7 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
         },
         location: {
           set: {
-            city: location?.city || undefined,
+            city: location?.city,
             state: location?.state || undefined,
             zip: location?.zip || undefined,
             otherinfo: location?.otherinfo || undefined
@@ -319,36 +319,36 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
           }))
         }
       },
-      include: {
-        clients: {
-          select: {
-            client: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true
-              }
-            }
-          }
-        },
-        technicians: {
-          select: {
-            technician: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true
-              }
-            }
-          }
-        },
-        jobType: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
+      // include: {
+      //   clients: {
+      //     select: {
+      //       client: {
+      //         select: {
+      //           id: true,
+      //           firstName: true,
+      //           lastName: true
+      //         }
+      //       }
+      //     }
+      //   },
+      //   technicians: {
+      //     select: {
+      //       technician: {
+      //         select: {
+      //           id: true,
+      //           firstName: true,
+      //           lastName: true
+      //         }
+      //       }
+      //     }
+      //   },
+      //   jobType: {
+      //     select: {
+      //       id: true,
+      //       name: true
+      //     }
+      //   }
+      // }
     });
     
 
