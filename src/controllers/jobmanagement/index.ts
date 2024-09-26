@@ -213,3 +213,59 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     next(statusError);
   }
 };
+
+export const getJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { jobId } = req.params;
+
+    // Fetch the job that matches the specified jobId
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        clients: {
+          select: {
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        technicians: {
+          select: {
+            technician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        jobType: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    // If no job is found, return a 404 error
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    // Return the job details
+    return res.status(200).json({ data: job });
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
