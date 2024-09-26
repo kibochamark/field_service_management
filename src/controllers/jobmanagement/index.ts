@@ -298,11 +298,11 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
         },
         clients: {
           deleteMany: {},
-          create: clients?.map((client: any) => ({
+          update: clients?.map((client: any) => ({
             client: {
-              connectOrCreate: {
+              connectOrUpdate: {
                 where: { id: client.id || '' },
-                create: { firstName: client.firstName, lastName: client.lastName }
+                update: { firstName: client.firstName, lastName: client.lastName }
               }
             }
           }))
@@ -311,9 +311,9 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
           deleteMany: {},
           create: technicians?.map((technician: any) => ({
             technician: {
-              connectOrCreate: {
+              connectOrUpdate: {
                 where: { id: technician.id || '' },
-                create: { firstName: technician.firstName, lastName: technician.lastName }
+                update: { firstName: technician.firstName, lastName: technician.lastName }
               }
             }
           }))
