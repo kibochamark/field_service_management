@@ -256,7 +256,7 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
     });
     // console.log(job, "job")
 
-    // If no job is found, return a 404 error
+
     
 
     // Return the job details
@@ -269,3 +269,96 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
     next(statusError);
   }
 };
+
+
+
+export const updateJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { jobId } = req.params;
+    const { name, description, jobTypeId, clients, technicians, location, status, startDate, endDate } = req.body;
+
+    // Update the job with new data
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        name: name || undefined,
+        description: description || undefined,
+        jobType: {
+          connect: jobTypeId ? { id: jobTypeId } : undefined
+        },
+        location: {
+          set: {
+            city: location?.city || undefined,
+            state: location?.state || undefined,
+            zip: location?.zip || undefined,
+            otherinfo: location?.otherinfo || undefined
+          }
+        },
+        clients: {
+          deleteMany: {},
+          create: clients?.map((client: any) => ({
+            client: {
+              connectOrCreate: {
+                where: { id: client.id || '' },
+                create: { firstName: client.firstName, lastName: client.lastName }
+              }
+            }
+          }))
+        },
+        technicians: {
+          deleteMany: {},
+          create: technicians?.map((technician: any) => ({
+            technician: {
+              connectOrCreate: {
+                where: { id: technician.id || '' },
+                create: { firstName: technician.firstName, lastName: technician.lastName }
+              }
+            }
+          }))
+        }
+      },
+      include: {
+        clients: {
+          select: {
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        technicians: {
+          select: {
+            technician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        jobType: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+    
+
+    // Return the updated job details
+    return res.status(200).json({ data: updatedJob }).end();
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
+
