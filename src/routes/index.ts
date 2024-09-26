@@ -69,7 +69,7 @@ routes.post("/job", authenticateToken, createJob);
 routes.get("/jobtype", getJobTypes);
 routes.post("/addjobtype", addBulkJobTypes);
 routes.get("/:companyId/retrievejobs", authenticateToken, getAllJobs);
-routes.get("/retrievejob/:jobId", authenticateToken, getJob);
+routes.get("/:jobId/retrievejob", authenticateToken, getJob);
 
 
 

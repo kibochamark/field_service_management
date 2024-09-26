@@ -220,7 +220,7 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const { jobId } = req.params;
 
-    // Fetch the job that matches the specified jobId
+    // // Fetch the job that matches the specified jobId
     const job = await prisma.job.findUnique({
       where: { id: jobId },
       include: {
@@ -254,14 +254,14 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
         }
       }
     });
+    // console.log(job, "job")
 
     // If no job is found, return a 404 error
-    if (!job) {
-      return res.status(404).json({ message: "Job not found" });
-    }
+    
 
     // Return the job details
-    return res.status(200).json({ data: job });
+    return res.status(200).json({ data: job }).end()
+    // return res.status(200).json({ message:"success"}).end()
   } catch (e: any) {
     statusError.status = "fail";
     statusError.statusCode = 500;
