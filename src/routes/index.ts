@@ -15,6 +15,9 @@ import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
 import { addBulkJobTypes, createJob, getAllJobs, getJob, getJobTypes } from "../controllers/jobmanagement"
 import { UpdateCompanyUserProfileInformation } from "../controllers/profilemanagement"
+import { createInvoice } from "../controllers/invoices/create"
+import { deleteInvoice, getAllInvoices, getInvoice } from "../controllers/invoices"
+import { updateInvoice } from "../controllers/invoices/update"
 
 
 const routes= Router()
@@ -72,6 +75,13 @@ routes.get("/:companyId/retrievejobs", authenticateToken, getAllJobs);
 routes.get("/retrievejob/:jobId", authenticateToken, getJob);
 
 
+
+// invoices
+routes.post("/invoice", authenticateToken, createInvoice);
+routes.get("/:companyId/invoices", authenticateToken, getAllInvoices)
+routes.get("/:invoiceId/invoice", authenticateToken, getInvoice)
+routes.delete("/:invoiceId/invoice", authenticateToken, deleteInvoice)
+routes.patch("/invoice", authenticateToken, updateInvoice)
 
 
 export default routes
