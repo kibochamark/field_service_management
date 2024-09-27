@@ -38,6 +38,8 @@ model User {
   Invoice       Invoice[]
 
   JobTechnician JobTechnician[]
+
+  InvoiceWorkflow InvoiceWorkflow[]
 }
 
 // Super Admin
@@ -240,6 +242,8 @@ model Invoice {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  InvoiceWorkflow InvoiceWorkflow[]
 }
 
 model Payment {
@@ -316,6 +320,20 @@ type Permission {
 type UserPermissions {
   key String
 }
+
+
+// Update by Mkibocha - invoice workflow 
+model InvoiceWorkflow {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+  invoiceId     String        @db.ObjectId
+  currentStage  InvoiceStatus @default(DRAFT)  // E.g., DRAFT, PENDING, PAID, OVERDUE, CANCELED
+  updatedBy     User?         @relation(fields: [updatedById], references: [id])
+  updatedById   String?       @db.ObjectId
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
 
 ///// application  enums ---------------------------
 
