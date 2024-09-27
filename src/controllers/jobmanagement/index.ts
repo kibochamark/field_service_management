@@ -277,8 +277,10 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
 
   try {
     const { jobId } = req.params;
-    const { name, description, jobTypeId, clients, technicians, location, status, startDate, endDate } = req.body;
+    const { name, description, jobType, clients, technicians, location, status, startDate, endDate } = req.body;
 
+
+    console.log(technicians, "technicians", clients)
     // Update the job with new data
     const updatedJob = await prisma.job.update({
       where: { id: jobId },
@@ -286,7 +288,9 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
         name: name || undefined,
         description: description || undefined,
         jobType: {
-          connect: jobTypeId ? { id: jobTypeId } : undefined
+          connect: {
+            id:jobType
+          }
         },
         location: {
           set: {
@@ -296,28 +300,30 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
             otherinfo: location?.otherinfo || undefined
           }
         },
-        clients: {
-          deleteMany: {},
-          update: clients?.map((client: any) => ({
-            client: {
-              connectOrUpdate: {
-                where: { id: client.id || '' },
-                update: { firstName: client.firstName, lastName: client.lastName }
-              }
-            }
-          }))
-        },
-        technicians: {
-          deleteMany: {},
-          create: technicians?.map((technician: any) => ({
-            technician: {
-              connectOrUpdate: {
-                where: { id: technician.id || '' },
-                update: { firstName: technician.firstName, lastName: technician.lastName }
-              }
-            }
-          }))
+        clients:{
+          connect:clients
         }
+        // clients: {
+        //   deleteMany: {},
+        //   update: clients?.map((client: any) => ({
+        //     client: {
+        //       connect:{
+                
+        //       }
+        //     }
+        //   }))
+        // },
+        // technicians: {
+        //   deleteMany: {},
+        //   create: technicians?.map((technician: any) => ({
+        //     technician: {
+        //       connectOrUpdate: {
+        //         where: { id: technician.technicianId},
+        //         update: { firstName: technician.firstName, lastName: technician.lastName }
+        //       }
+        //     }
+        //   }))
+        // }
       },
       // include: {
       //   clients: {
@@ -350,6 +356,8 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
       //   }
       // }
     });
+
+
     
 
     // Return the updated job details
