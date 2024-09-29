@@ -387,7 +387,7 @@ export async function createBulkEmployees(req: Request, res: Response, next: Nex
         if (jsonArray.length > 0) {
             for (let employee of jsonArray as any) {
                 // Lookup role by name from the Excel data
-                const role = await prisma.role.findUnique({
+                const role = await prisma.role.findFirst({
                     where: { name: employee["role"] }, // Match role names in the Excel sheet (e.g., "business admin", "dispatcher")
                     select: { id: true, name: true }
                 });

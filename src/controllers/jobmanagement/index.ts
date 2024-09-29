@@ -213,3 +213,160 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     next(statusError);
   }
 };
+
+export const getJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { jobId } = req.params;
+
+    // // Fetch the job that matches the specified jobId
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        clients: {
+          select: {
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        technicians: {
+          select: {
+            technician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        jobType: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+    // console.log(job, "job")
+
+
+    
+
+    // Return the job details
+    return res.status(200).json({ data: job }).end()
+    // return res.status(200).json({ message:"success"}).end()
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
+
+
+
+export const updateJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { jobId } = req.params;
+    const { name, description, jobType, clients, technicians, location, status, startDate, endDate } = req.body;
+
+
+    console.log(technicians, "technicians", clients)
+    // Update the job with new data
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        name: name || undefined,
+        description: description || undefined,
+        jobType: {
+          connect: {
+            id:jobType
+          }
+        },
+        location: {
+          set: {
+            city: location?.city,
+            state: location?.state || undefined,
+            zip: location?.zip || undefined,
+            otherinfo: location?.otherinfo || undefined
+          }
+        },
+        clients:{
+          connect:clients
+        }
+        // clients: {
+        //   deleteMany: {},
+        //   update: clients?.map((client: any) => ({
+        //     client: {
+        //       connect:{
+                
+        //       }
+        //     }
+        //   }))
+        // },
+        // technicians: {
+        //   deleteMany: {},
+        //   create: technicians?.map((technician: any) => ({
+        //     technician: {
+        //       connectOrUpdate: {
+        //         where: { id: technician.technicianId},
+        //         update: { firstName: technician.firstName, lastName: technician.lastName }
+        //       }
+        //     }
+        //   }))
+        // }
+      },
+      // include: {
+      //   clients: {
+      //     select: {
+      //       client: {
+      //         select: {
+      //           id: true,
+      //           firstName: true,
+      //           lastName: true
+      //         }
+      //       }
+      //     }
+      //   },
+      //   technicians: {
+      //     select: {
+      //       technician: {
+      //         select: {
+      //           id: true,
+      //           firstName: true,
+      //           lastName: true
+      //         }
+      //       }
+      //     }
+      //   },
+      //   jobType: {
+      //     select: {
+      //       id: true,
+      //       name: true
+      //     }
+      //   }
+      // }
+    });
+
+
+    
+
+    // Return the updated job details
+    return res.status(200).json({ data: updatedJob }).end();
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
+

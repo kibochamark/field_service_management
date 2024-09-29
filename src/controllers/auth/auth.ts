@@ -21,7 +21,7 @@ const userSchema = Joi.object({
 
 const googleUser = Joi.object({
     firstname: Joi.string().required(),
-    lastname: Joi.string().required(),
+    lastname: Joi.string(),
     email: Joi.string().email().required(),
     googleId: Joi.string().required(),
 });
@@ -318,7 +318,7 @@ export async function loginUser(req: express.Request, response: express.Response
             const accessToken = generateAccessToken(user.id);
             const refreshToken = generateRefreshToken(user.id)
 
-            response.json({ accessToken, refreshToken, hascompany: user?.companyId ? true : false,   
+            response.json({ accessToken, refreshToken, hascompany: user?.company ? true : false,   
                                       role:user?.role?.name,
                                       name:user?.firstName + " " + user?.lastName,
                         email:user?.email,

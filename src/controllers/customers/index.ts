@@ -31,8 +31,7 @@ const createCustomerSChema = Joi.object({
     email: Joi.string().email().required(),
     profile: Joi.object({
         phone: Joi.string().required(),
-        address: Joi.object({
-            street: Joi.string().required(),
+        address: Joi.object({            
             city: Joi.string().required(),
             state: Joi.string().required(),
             zip: Joi.string().required()
@@ -166,22 +165,26 @@ export async function getCustomer(req: Request, res: Response, next: NextFunctio
 
 // create  a customer
 export async function createCustomer(req: Request, res: Response, next: NextFunction) {
-    let statusError: GlobalError = new Error("")
+    let statusError: GlobalError = new Error("");
 
     try {
-        // check if user has passed the right data in the request body object
+        console.log("Request body:", req.body);  // Log incoming request data
+        
+        // Check if user has passed the right data in the request body object
         const { error, value } = createCustomerSChema.validate(req.body, { abortEarly: false });
         if (error) {
+            console.log("Validation error:", error.details);  // Log validation errors
             statusError = new Error(JSON.stringify(
                 {
                     error: error.details.map(detail => detail.message),
                 }
-            ))
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            next(statusError)
-
+            ));
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            return next(statusError);  // Return to stop further execution
         }
+
+        console.log("Validated data:", value);  // Log validated data
 
         const {
             companyId,
@@ -191,12 +194,13 @@ export async function createCustomer(req: Request, res: Response, next: NextFunc
             profile,
             roleId,
             notes,
-        } = value
+        } = value;
 
-        // retrieve user from request
-        const user = req.user as { userId: string }
+        // Retrieve user from request
+        const user = req.user as { userId: string };
+        console.log("User performing the action:", user);
 
-        // check if users role is authorized to perform the above action
+        // Check if user's role is authorized to perform the above action
         const role = await prisma.user.findUnique({
             where: {
                 id: user.userId
@@ -208,18 +212,21 @@ export async function createCustomer(req: Request, res: Response, next: NextFunc
                     }
                 }
             }
-        })
+        });
 
-        if ((role?.role.name !== "business owner") && (role?.role.name !== "business admin")) {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "You are not allowed to perform this action"
-            next(statusError)
+        console.log("User's role:", role?.role.name);  // Log the user's role
+
+        if (!role || (role.role.name !== "business owner" && role.role.name !== "business admin")) {
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            statusError.message = "You are not allowed to perform this action";
+            console.log("Authorization error:", statusError.message);  // Log authorization error
+            return next(statusError);  // Return to stop further execution
         }
 
+        console.log("Authorized to create customer");  // Log when user is authorized
 
-        // create customer
-
+        // Create customer
         const customer = await prisma.client.create({
             data: {
                 firstName: firstName,
@@ -232,18 +239,21 @@ export async function createCustomer(req: Request, res: Response, next: NextFunc
                 roleId: roleId,
                 companyId: companyId
             }
-        })
+        });
 
+        console.log("Customer created successfully:", customer);  // Log the created customer
 
-        return res.status(201).json(customer).end()
+        return res.status(201).json(customer).end();
 
     } catch (e: any) {
-        statusError.statusCode = 500
-        statusError.status = "server error"
-        statusError.message = e?.message
-        next(statusError)
+        console.error("Server error:", e.message);  // Log the server error message
+        statusError.statusCode = 500;
+        statusError.status = "server error";
+        statusError.message = e?.message;
+        next(statusError);
     }
 }
+
 
 
 // update  a customer
