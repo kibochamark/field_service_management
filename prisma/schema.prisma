@@ -77,7 +77,9 @@ model Client {
   
   Invoice Invoice[]
 
-  JobClient JobClient[]
+
+
+  Job Job[]
 }
 
 //compamny / business
@@ -129,10 +131,11 @@ model Job {
   jobType      JobType     @relation(fields: [jobTypeId], references: [id])
   jobTypeId    String      @db.ObjectId
   location     Address?
-  status       JobStatus   @default(NOTASSIGNED)
+  status       JobStatus   @default(CREATED)
   dispatcher   User?       @relation(name: "dispatcher", fields: [dispatcherId], references: [id])
   dispatcherId String?     @db.ObjectId
-  clients      JobClient[] // Relations to handle multiple clients
+  clients      Client      @relation(fields: [clientsId], references: [id]) // Relations to handle multiple clients @relation(fields: [clientsid], references: [id])
+  clientsId    String       @db.ObjectId
   technicians  JobTechnician[] // Relations to handle multiple technicians
   jobschedule  JobSchedule?
   company      Company     @relation(fields: [companyId], references: [id])
@@ -147,14 +150,6 @@ model Job {
 
 
 
-model JobClient {
-  id      String   @id @default(auto()) @map("_id") @db.ObjectId
-  jobId   String   @db.ObjectId
-  clientId String  @db.ObjectId
-  
-  job     Job      @relation(fields: [jobId], references: [id])
-  client  Client   @relation(fields: [clientId], references: [id])
-}
 
 model JobTechnician {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -320,11 +315,13 @@ type UserPermissions {
 ///// application  enums ---------------------------
 
 enum JobStatus {
-  NOTASSIGNED
-  NOTSTARTED
+  CREATED
+  ASSIGNED
+  SCHEDULED
   ONGOING
   COMPLETED
 }
+
 
 enum JobRecurrence {
   DAILY
