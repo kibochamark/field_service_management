@@ -16,6 +16,9 @@ import { auth } from "google-auth-library"
 // import { addBulkJobTypes, createJob, getAllJobs, getJob, getJobTypes, updateJob } from "../controllers/jobmanagement"
 import { UpdateCompanyUserProfileInformation } from "../controllers/profilemanagement"
 import { assignJob, createJob } from "../controllers/jobmanagement"
+import { createInvoice } from "../controllers/invoices/create"
+import { deleteInvoice, getAllInvoices, getInvoice } from "../controllers/invoices"
+import { updateInvoice } from "../controllers/invoices/update"
 
 
 const routes= Router()
@@ -75,6 +78,13 @@ routes.put("/assign/:id", authenticateToken, assignJob);
 // routes.put("/:jobId/updatejob", authenticateToken, updateJob);
 
 
+
+// invoices
+routes.post("/invoice", authenticateToken, createInvoice);
+routes.get("/:companyId/invoices", authenticateToken, getAllInvoices)
+routes.get("/:invoiceId/invoice", authenticateToken, getInvoice)
+routes.delete("/:invoiceId/invoice", authenticateToken, deleteInvoice)
+routes.patch("/invoice", authenticateToken, updateInvoice)
 
 
 export default routes
