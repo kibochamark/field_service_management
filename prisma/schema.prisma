@@ -136,8 +136,8 @@ model Job {
   status       JobStatus   @default(CREATED)
   dispatcher   User?       @relation(name: "dispatcher", fields: [dispatcherId], references: [id])
   dispatcherId String?     @db.ObjectId
-  clients      Client      @relation(fields: [clientsId], references: [id]) // Relations to handle multiple clients @relation(fields: [clientsid], references: [id])
-  clientsId    String       @db.ObjectId
+  clients      Client      @relation(fields: [clientId], references: [id]) // Relations to handle multiple clients @relation(fields: [clientsid], references: [id])
+  clientId    String       @db.ObjectId
   technicians  JobTechnician[] // Relations to handle multiple technicians
   jobschedule  JobSchedule?
   company      Company         @relation(fields: [companyId], references: [id])
