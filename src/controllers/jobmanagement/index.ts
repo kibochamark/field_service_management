@@ -226,7 +226,7 @@ const JobUpdateSchema = Joi.object({
     zip: Joi.string().required(),
     state: Joi.string().required(),
     otherinfo: Joi.string().optional()
-  }),
+  }).required(),
   technicianIds: Joi.array().items(Joi.string()).required(), // Array of technician IDs to connect
 });
 
@@ -278,25 +278,59 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
         return next(statusError); // Pass the error to the next middleware
       }
 
-      techniciansToConnect = technicianIds.map((id: string) => ({ id })); // Map IDs to the format needed for Prisma
+      techniciansToConnect = technicianIds.map((id: string) => ({ technicianId:id, jobId:jobId })); // Map IDs to the format needed for Prisma
     }
+
+    // // Update the job in the database
+    // const updatedJob = await prisma.job.update({
+    //   where: { id: jobId },
+    //   data: {
+    //     location:location,
+    //     technicians: techniciansToConnect.length > 0 ? {
+    //       connect: techniciansToConnect,
+    //     } : undefined,
+    //     status: "ASSIGNED", // Always set status to 'ASSIGNED'
+    //   },
+    // });
+
+    // // perform a transcation so that both or none should be created
+    const [updatejob,jobtech] =await prisma.$transaction(async (tx) => {
+      const jobtech = await prisma.jobTechnician.createMany({
+          data: techniciansToConnect
+          
+      })
+
+      const jobtechs = await prisma.jobTechnician.findMany({
+        where:{
+          jobId:jobId
+        }
+      })
+
+      let connectlist = jobtechs.map((job: any) => ({ id: job.id }));
+    
 
     // Update the job in the database
     const updatedJob = await prisma.job.update({
       where: { id: jobId },
       data: {
         location:location,
-        technicians: techniciansToConnect.length > 0 ? {
-          connect: techniciansToConnect,
+        technicians:connectlist.length > 0 ? {
+          connect: connectlist,
         } : undefined,
         status: "ASSIGNED", // Always set status to 'ASSIGNED'
       },
     });
 
+
+      return [updatedJob, jobtech]
+
+  })
+
+
     // Return the updated job data
     return res.status(200).json({
       status: "success",
-      data: updatedJob,
+      data: updatejob,
     });
   } catch (e: any) {
     statusError.status = "fail";
@@ -306,3 +340,145 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+export const getJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { jobId } = req.params;
+
+    // // Fetch the job that matches the specified jobId
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        
+            clients: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+        ,
+        technicians: {
+          select: {
+            technician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        jobType: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+    // console.log(job, "job")
+
+
+    
+
+    // Return the job details
+    return res.status(200).json({ data: job }).end()
+    // return res.status(200).json({ message:"success"}).end()
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
+
+export const addBulkJobTypes = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const jobTypes = req.body.jobTypes;
+
+    if (!Array.isArray(jobTypes) || jobTypes.length === 0) {
+      statusError.message = "Please provide an array of job types";
+      statusError.statusCode = 400;
+      statusError.status = "fail";
+      return next(statusError);
+    }
+
+    // Create bulk job types
+    const createdJobTypes = await prisma.jobType.createMany({
+      data: jobTypes.map((name: string) => ({
+        name
+      })),      
+    });
+
+    return res.status(201).json({
+      message: "Job types created successfully",
+      createdJobTypes
+    }).end();
+  } catch (error: any) {
+    statusError.message = error.message;
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    return next(statusError);
+  }
+};
+
+export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { companyId } = req.params;
+
+    // Fetch all jobs that belong to the specified companyId
+    const jobs = await prisma.job.findMany({
+      where: { companyId }, include: {clients: 
+          {select:
+            {id:true, firstName:true, lastName:true}} , technicians:{select:{technician:{select:{id:true, firstName:true, lastName:true}}}}, jobType:{select:{id:true, name:true}}}
+      
+    });  
+    
+    console.log(jobs, "them jobs")
+    // Return the list of jobs
+    return res.status(200).json({data:jobs});
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
+export const getJobTypes = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+      // Retrieve job types from the database
+      const jobTypes = await prisma.jobType.findMany({
+          select: {
+              id: true,
+              name: true,              
+          },
+      });
+
+      // Check if job types are found
+      if (!jobTypes || jobTypes.length === 0) {
+          statusError.message = "No job types found";
+          statusError.statusCode = 404;
+          statusError.status = "fail";
+          return next(statusError);
+      }
+
+      // Return job types
+      return res.status(200).json({
+          status: "success",
+          data: jobTypes,
+      });
+  } catch (e: any) {
+      statusError.status = "fail";
+      statusError.statusCode = 501;
+      statusError.message = e.message;
+      return next(statusError);
+  }
+};

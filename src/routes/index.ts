@@ -15,7 +15,7 @@ import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
 // import { addBulkJobTypes, createJob, getAllJobs, getJob, getJobTypes, updateJob } from "../controllers/jobmanagement"
 import { UpdateCompanyUserProfileInformation } from "../controllers/profilemanagement"
-import { assignJob, createJob } from "../controllers/jobmanagement"
+import { addBulkJobTypes, assignJob, createJob, getAllJobs, getJob, getJobTypes } from "../controllers/jobmanagement"
 import { createInvoice } from "../controllers/invoices/create"
 import { deleteInvoice, getAllInvoices, getInvoice } from "../controllers/invoices"
 import { updateInvoice } from "../controllers/invoices/update"
@@ -71,10 +71,10 @@ routes.delete("/customer/:id", authenticateToken, deleteCustomer);
 // job
 routes.post("/job", authenticateToken, createJob);
 routes.put("/assign/:id", authenticateToken, assignJob);
-// routes.get("/jobtype", getJobTypes);
-// routes.post("/addjobtype", addBulkJobTypes);
-// routes.get("/:companyId/retrievejobs", authenticateToken, getAllJobs);
-// routes.get("/:jobId/retrievejob", authenticateToken, getJob);
+routes.get("/jobtype", getJobTypes);
+routes.post("/addjobtype", addBulkJobTypes);
+routes.get("/:companyId/retrievejobs", authenticateToken, getAllJobs);
+routes.get("/:jobId/retrievejob", authenticateToken, getJob);
 // routes.put("/:jobId/updatejob", authenticateToken, updateJob);
 
 
