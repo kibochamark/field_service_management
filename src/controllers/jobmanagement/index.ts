@@ -70,9 +70,9 @@ import { GlobalError } from "../../types/errorTypes"; // Assuming you have a Glo
 const JobSchema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().required(),
-  jobTypeId: Joi.string().required(), // Reference to JobType
-  clientsId: Joi.string().required(), // Reference to Client
-  companyId: Joi.string().required(), // Reference to Company
+  jobTypeId: Joi.string().required(), 
+  clientId: Joi.string().required(),
+  companyId: Joi.string().required(), 
 });
 
 // Create Job API
@@ -89,7 +89,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
       return next(statusError); // Pass the error to the next middleware
     }
 
-    const { name, description, jobTypeId, clientsId, companyId } = req.body;
+    const { name, description, jobTypeId, clientId, companyId } = req.body;
 
     // Create the job in the database
     const newJob = await prisma.job.create({
@@ -100,7 +100,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
           connect: { id: jobTypeId }, // Connect to existing JobType
         },
         clients: {
-          connect: { id: clientsId }, // Connect to existing Client
+          connect: { id: clientId }, // Connect to existing Client
         },
         company: {
           connect: { id: companyId }, // Connect to existing Company
@@ -378,7 +378,7 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
         }
       }
     });
-    // console.log(job, "job")
+    console.log(job, "job")
 
 
     

@@ -73,7 +73,7 @@ export async function getAllInvoices(req: Request, res: Response, next: NextFunc
         return res.status(200).json({
             message:"success",
             invoices:allinvoices
-        }).end()
+        })
 
     } catch (e: any) {
         statusError.message = e.message
