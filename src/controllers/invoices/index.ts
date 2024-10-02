@@ -52,6 +52,7 @@ export async function getAllInvoices(req: Request, res: Response, next: NextFunc
                 id:true,
                 client:{
                     select:{
+                        email:true,
                         firstName:true,
                         lastName:true
                     }
@@ -121,6 +122,7 @@ export async function getInvoice(req: Request, res: Response, next: NextFunction
                 id:true,
                 client:{
                     select:{
+                        email:true,
                         firstName:true,
                         lastName:true
                     }
