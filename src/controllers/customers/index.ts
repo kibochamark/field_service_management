@@ -149,8 +149,7 @@ export async function getCustomer(req: Request, res: Response, next: NextFunctio
         })
 
         return res.status(200).json(customer).end()
-
-
+        
 
     } catch (e: any) {
         statusError.statusCode = 500
