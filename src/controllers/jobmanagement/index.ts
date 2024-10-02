@@ -378,7 +378,7 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
         }
       }
     });
-    // console.log(job, "job")
+    console.log(job, "job")
 
 
     
