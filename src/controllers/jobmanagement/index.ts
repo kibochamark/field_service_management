@@ -221,13 +221,19 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
 
 // Joi Schema for Job Update
 const JobUpdateSchema = Joi.object({
+  location: Joi.object({
+    city: Joi.string().required(),
+    zip: Joi.string().required(),
+    state: Joi.string().required(),
+    otherinfo: Joi.string().optional()
+  }),
   technicianIds: Joi.array().items(Joi.string()).required(), // Array of technician IDs to connect
 });
 
 // Update Job API
 export const assignJob = async (req: Request, res: Response, next: NextFunction) => {
-  let statusError: GlobalError = new Error(""); 
-  const jobId = req.params.id; 
+  let statusError: GlobalError = new Error("");
+  const jobId = req.params.id;
 
   try {
     // Validate the request body against the schema
@@ -239,7 +245,7 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
       return next(statusError); // Pass the error to the next middleware
     }
 
-    const { technicianIds } = req.body;
+    const { technicianIds, location } = req.body;
 
     // Find the existing job
     const existingJob = await prisma.job.findUnique({
@@ -272,13 +278,14 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
         return next(statusError); // Pass the error to the next middleware
       }
 
-      techniciansToConnect = technicianIds.map((id:string) => ({ id })); // Map IDs to the format needed for Prisma
+      techniciansToConnect = technicianIds.map((id: string) => ({ id })); // Map IDs to the format needed for Prisma
     }
 
     // Update the job in the database
     const updatedJob = await prisma.job.update({
       where: { id: jobId },
       data: {
+        location:location,
         technicians: techniciansToConnect.length > 0 ? {
           connect: techniciansToConnect,
         } : undefined,
