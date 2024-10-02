@@ -330,6 +330,7 @@ enum JobStatus {
   SCHEDULED
   ONGOING
   COMPLETED
+  CANCELLED
 }
 
 
