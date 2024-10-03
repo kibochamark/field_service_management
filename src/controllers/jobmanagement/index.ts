@@ -279,19 +279,7 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
       }
 
       techniciansToConnect = technicianIds.map((id: string) => ({ technicianId:id, jobId:jobId })); // Map IDs to the format needed for Prisma
-    }
-
-    // // Update the job in the database
-    // const updatedJob = await prisma.job.update({
-    //   where: { id: jobId },
-    //   data: {
-    //     location:location,
-    //     technicians: techniciansToConnect.length > 0 ? {
-    //       connect: techniciansToConnect,
-    //     } : undefined,
-    //     status: "ASSIGNED", // Always set status to 'ASSIGNED'
-    //   },
-    // });
+    }    
 
     // // perform a transcation so that both or none should be created
     const [updatejob,jobtech] =await prisma.$transaction(async (tx) => {
