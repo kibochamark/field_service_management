@@ -343,7 +343,8 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
               select: {
                 id: true,
                 firstName: true,
-                lastName: true
+                lastName: true,
+                email:true
               }
             }
         ,
@@ -366,7 +367,7 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
         }
       }
     });
-    // console.log(job, "job")
+    console.log(job, "job")
 
 
     
@@ -424,7 +425,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     const jobs = await prisma.job.findMany({
       where: { companyId }, include: {clients: 
           {select:
-            {id:true, firstName:true, lastName:true}} , technicians:{select:{technician:{select:{id:true, firstName:true, lastName:true}}}}, jobType:{select:{id:true, name:true}}}
+            {id:true, firstName:true, lastName:true, email:true}} , technicians:{select:{technician:{select:{id:true, firstName:true, lastName:true}}}}, jobType:{select:{id:true, name:true}}}
       
     });  
     
