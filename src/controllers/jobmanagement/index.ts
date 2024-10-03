@@ -471,3 +471,76 @@ export const getJobTypes = async (req: Request, res: Response, next: NextFunctio
       return next(statusError);
   }
 };
+
+
+//Schedule job
+const JobScheduleSchema = Joi.object({
+  jobSchedule: Joi.object({
+    startDate: Joi.date().required(), 
+    endDate: Joi.date().optional(), 
+    recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY").optional(), 
+  }).required(),
+});
+
+export const scheduleJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+  const jobId = req.params.jobId;
+
+  try {
+    // Validate the request body against the schema
+    const { error } = JobScheduleSchema.validate(req.body);
+    if (error) {
+      statusError.message = error.details[0].message; // Set the error message from Joi validation
+      statusError.statusCode = 400; // Bad Request
+      statusError.status = "fail";
+      return next(statusError); // Pass the error to the next middleware
+    }
+
+    const { jobSchedule } = req.body;
+    const { startDate, endDate, recurrence } = jobSchedule;
+
+    // Find the existing job
+    const existingJob = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!existingJob) {
+      statusError.message = "Job not found"; // Handle case where job does not exist
+      statusError.statusCode = 404; // Not Found
+      statusError.status = "fail";
+      return next(statusError); // Pass the error to the next middleware
+    }
+
+    // Check if the endDate is earlier than the startDate
+    if (endDate && new Date(endDate) < new Date(startDate)) {
+      statusError.message = "End date cannot be earlier than start date"; // Handle invalid date range
+      statusError.statusCode = 400; // Bad Request
+      statusError.status = "fail";
+      return next(statusError); // Pass the error to the next middleware
+    }
+
+    // Update the job with schedule information
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        jobschedule: {
+          startDate: new Date(startDate),
+          endDate: endDate ? new Date(endDate) : new Date(startDate),
+          recurrence: recurrence || null, 
+        },
+        status: "SCHEDULED", // Set job status to SCHEDULED
+      },
+    });
+
+    // Return the updated job data
+    return res.status(200).json({
+      status: "success",
+      data: updatedJob,
+    });
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500; // Internal Server Error
+    statusError.message = e.message; // Set the error message
+    return next(statusError); // Pass the error to the next middleware
+  }
+};
