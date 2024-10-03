@@ -73,6 +73,7 @@ const JobSchema = Joi.object({
   jobTypeId: Joi.string().required(), 
   clientId: Joi.string().required(),
   companyId: Joi.string().required(), 
+  dispatcherId: Joi.string().required(),
 });
 
 // Create Job API
@@ -89,8 +90,8 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
       return next(statusError); // Pass the error to the next middleware
     }
 
-    const { name, description, jobTypeId, clientId, companyId } = req.body;
-
+    const { name, description, jobTypeId, clientId, companyId, dispatcherId } = req.body;
+     
     // Create the job in the database
     const newJob = await prisma.job.create({
       data: {
@@ -105,6 +106,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
         company: {
           connect: { id: companyId }, // Connect to existing Company
         },
+        dispatcherId
       },
     });
 
