@@ -73,7 +73,7 @@ const JobSchema = Joi.object({
   jobTypeId: Joi.string().required(), 
   clientId: Joi.string().required(),
   companyId: Joi.string().required(), 
-  dispatcherId: Joi.string().required(),
+  
 });
 
 // Create Job API
