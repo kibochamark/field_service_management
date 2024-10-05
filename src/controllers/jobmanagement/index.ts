@@ -73,6 +73,7 @@ const JobSchema = Joi.object({
   jobTypeId: Joi.string().required(), 
   clientId: Joi.string().required(),
   companyId: Joi.string().required(), 
+  dispatcherId: Joi.string().required(), 
   
 });
 
@@ -91,23 +92,39 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
     }
 
     const { name, description, jobTypeId, clientId, companyId, dispatcherId } = req.body;
-     
+
+
     // Create the job in the database
     const newJob = await prisma.job.create({
       data: {
         name,
         description,
-        jobType: {
-          connect: { id: jobTypeId }, // Connect to existing JobType
-        },
-        clients: {
-          connect: { id: clientId }, // Connect to existing Client
-        },
-        company: {
-          connect: { id: companyId }, // Connect to existing Company
-        },
-        dispatcherId
+        jobTypeId,
+        dispatcherId,
+        companyId,
+        clientId
       },
+      select:{
+        id:true,
+        name:true,
+        description:true,
+        dispatcher:{
+          select:{
+            firstName:true
+          }
+        },
+        technicians:{
+          select:{
+            technician:{
+              select:{
+                firstName:true
+              }
+            }
+          }
+        },
+
+        status:true
+      }
     });
 
     // Return the created job data
