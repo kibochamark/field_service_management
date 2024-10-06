@@ -6,6 +6,7 @@ import { hashPassword } from "../../utils/hashpasswordGenereator";
 import { generateAccessToken, generateRefreshToken } from "utils/tokens";
 import { permission } from "process";
 import { CompanySize } from "@prisma/client";
+import { addDays } from "date-fns";
 
 // validation schema
 const companySchema = Joi.object({
@@ -19,11 +20,11 @@ const companySchema = Joi.object({
     imageUrl: Joi.object({
         url: Joi.string()
     }),
-    address:Joi.string().required(),
+    address: Joi.string().required(),
     stateinfo: Joi.object({
         city: Joi.string().required(),
         zip: Joi.string().required(),
-        state:Joi.string().required(),
+        state: Joi.string().required(),
         otherInfo: Joi.string()
     }),
     subscriptionId: Joi.string()
@@ -40,7 +41,7 @@ const updateCompanySchema = Joi.object({
     imageUrl: Joi.object({
         url: Joi.string()
     }),
-    address:Joi.string(),
+    address: Joi.string(),
     stateinfo: Joi.object({
         city: Joi.string(),
         zip: Joi.string(),
@@ -140,41 +141,61 @@ export const createCompany = async (req: Request, res: Response, next: NextFunct
             return next(error);
         }
 
-        // Create the company with the user's ID
-        const newCompany = await prisma.company.create({
-            data: {
-                name,
-                description,
-                companysize: companySize,
-                email,
-                poBox,
-                addressline1,
-                addressline2,
-                subscriptionId,
-                image: imageUrl ? {
-                    url: imageUrl,
-                } : undefined,
-                address,
-                stateinfo:{
-                    set:{
-                        city:stateinfo.city,
-                        zip:stateinfo.zip,
-                        state:stateinfo.state,
-                        otherinfo:stateinfo.otherinfo ?? ""
+        const [newCompany, sub] = await prisma.$transaction(async (tx) => {
 
-                    }
-                },
-                users: {
-                    connect: { id: user?.id },
-                },
-            },
-        });
+            // get a basic plan
+            const plan = await prisma.subscriptionPlan.findMany()
 
-        // Update the user's companyId field
-        await prisma.user.update({
-            where: { id: decodeduser.userId },
-            data: { companyId: newCompany.id },
-        });
+            const sub = await prisma.subscription.create({
+                data: {
+                    startDate: new Date(),
+                    endDate: addDays(new Date(), 7),
+                    planId: plan[0].id
+
+                }
+            })
+
+
+            // Create the company with the user's ID
+            const newCompany = await prisma.company.create({
+                data: {
+                    name,
+                    description,
+                    companysize: companySize,
+                    email,
+                    poBox,
+                    addressline1,
+                    addressline2,
+                    subscriptionId: sub?.id,
+                    image: imageUrl ? {
+                        url: imageUrl,
+                    } : undefined,
+                    address,
+                    stateinfo: {
+                        set: {
+                            city: stateinfo.city,
+                            zip: stateinfo.zip,
+                            state: stateinfo.state,
+                            otherinfo: stateinfo.otherinfo ?? ""
+                        }
+                    },
+                    users: {
+                        connect: { id: user?.id },
+                    },
+                },
+            });
+
+
+            // Update the user's companyId field
+            await prisma.user.update({
+                where: { id: decodeduser.userId },
+                data: { companyId: newCompany.id },
+            });
+
+
+            return [newCompany, sub]
+
+        })
 
         // Respond with the newly created company
         res.status(201).json({
@@ -494,7 +515,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
         // retrieve config that checks if business owner already exists
 
-        const config= await prisma.config.findFirst()
+        const config = await prisma.config.findFirst()
 
         if ((role?.role.name !== "business owner") && (role?.role.name !== "business admin")) {
             statusError.statusCode = 400
@@ -511,7 +532,7 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
             return next(statusError)
         }
 
-        
+
         if (roleofnewuser?.name === "client") {
             statusError.statusCode = 400
             statusError.status = "fail"
@@ -547,10 +568,10 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
                 lastName: lastname,
                 roleId: roleId,
                 companyId: companyId,
-                profile:{
-                    set:{
-                        phone:phonenumber
-                        
+                profile: {
+                    set: {
+                        phone: phonenumber
+
                     }
                 },
                 permissions: permissions
@@ -612,27 +633,27 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
 
 
 // retrieve comapny size
-export async function getCompanySize(req:Request, res:Response, next:NextFunction){
+export async function getCompanySize(req: Request, res: Response, next: NextFunction) {
     // initialize global error stack
     let statusError: GlobalError = new Error("")
 
-    try{
-        
+    try {
+
         let companysizedict = {
             // "owner": CompanySize.Owner,
             // "5":CompanySize.Five,
-            "1-10":CompanySize.OneTen,
-            "11-25":CompanySize.ElevenTwentyFive,
-            "26-50":CompanySize.TwentySixFifty,
-            "50+":CompanySize.FiftyPlus
+            "1-10": CompanySize.OneTen,
+            "11-25": CompanySize.ElevenTwentyFive,
+            "26-50": CompanySize.TwentySixFifty,
+            "50+": CompanySize.FiftyPlus
         }
 
         return res.status(200).json(companysizedict).end()
 
-    }catch(e:any){
+    } catch (e: any) {
         statusError.status = "fail",
-        statusError.statusCode = 500
-        statusError.message ="server error - failed to retrieve data"
+            statusError.statusCode = 500
+        statusError.message = "server error - failed to retrieve data"
         next(statusError)
     }
 

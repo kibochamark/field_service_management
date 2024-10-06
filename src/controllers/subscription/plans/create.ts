@@ -30,7 +30,7 @@ const PlanSchema = Joi.object({
     description: Joi.object().required(),
     companySize: Joi.string().valid("Tenplus",
         "OneTen",
-        " ElevenTwentyFive",
+        "ElevenTwentyFive",
         "TwentySixFifty",
         "FiftyPlus"),
     duration: Joi.string().valid("MONTHLY", "QUARTERLY", "SEMI_ANNUALLY", "YEARLY"),
@@ -111,11 +111,12 @@ export async function getPlans(req: Request, res: Response, next: NextFunction) 
 
         // get existing plans
         const plans = await prisma.subscriptionPlan.findMany()
+        console.log("plans")
 
         return res.status(200).json({
             status: "success",
             data: plans
-        }).end()
+        })
 
 
     } catch (e: any) {

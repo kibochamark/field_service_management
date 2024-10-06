@@ -179,6 +179,15 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                     select:{
                         name:true
                     }
+                },
+                company:{
+                    select:{
+                        subscription:{
+                            select:{
+                                status:true
+                            }
+                        }
+                    }
                 }
             }
         })
@@ -202,7 +211,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         role :existinguser?.role?.name,
                         name:existinguser?.firstName + " " + existinguser?.lastName,
                         email:existinguser?.email,
-                        userId: existinguser?.id
+                        userId: existinguser?.id,
+                        isSubscribed:existinguser?.company?.subscription?.status === "ACTIVE"
                     }
                 }
             }).end()
@@ -228,7 +238,13 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                     enabled: true,
                     company: {
                         select: {
-                            name: true
+                            name: true,
+                            subscription:{
+                                select:{
+                                    isTrial:true,
+                                    status:true
+                                }
+                            }
                         }
                     },
                     role: {
@@ -237,6 +253,7 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         }
                     },
                     createdAt: true,
+
                 }
 
             })
@@ -272,7 +289,8 @@ export async function createUserwithGoogle(req: express.Request, res: express.Re
                         role:newuser?.role?.name,
                         name:newuser?.firstName + " " + newuser?.lastName,
                         email:newuser?.email,
-                        userId: newuser?.id
+                        userId: newuser?.id,
+                        isSubscribed:newuser?.company?.subscription?.status === "ACTIVE"
                     },
                 }
             }).end()
@@ -322,7 +340,8 @@ export async function loginUser(req: express.Request, response: express.Response
                                       role:user?.role?.name,
                                       name:user?.firstName + " " + user?.lastName,
                         email:user?.email,
-                        userId: user?.id
+                        userId: user?.id,
+                        isSubscribed:user?.company?.subscription?.status === "ACTIVE"
             });
         })(req, response, next);
     } catch (e: any) {
