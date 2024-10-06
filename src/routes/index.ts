@@ -19,6 +19,8 @@ import { addBulkJobTypes, assignJob, createJob, getAllJobs, getJob, getJobTypes,
 import { createInvoice } from "../controllers/invoices/create"
 import { deleteInvoice, getAllInvoices, getInvoice } from "../controllers/invoices"
 import { updateInvoice } from "../controllers/invoices/update"
+import { createPlan, deletePlan, getPlan, getPlans, updatePlan } from "../controllers/subscription/plans/create"
+import { createSubscription, deleteSubscription, getSubscription, getSubscriptions, updateSubscription } from "../controllers/subscription"
 
 
 const routes= Router()
@@ -85,6 +87,21 @@ routes.get("/:companyId/invoices", authenticateToken, getAllInvoices)
 routes.get("/:invoiceId/invoice", authenticateToken, getInvoice)
 routes.delete("/:invoiceId/invoice", authenticateToken, deleteInvoice)
 routes.patch("/invoice", authenticateToken, updateInvoice)
+
+
+// plans
+routes.post("/plan", authenticateToken, createPlan);
+routes.get("/plans", authenticateToken, getPlans)
+routes.get("/:planId/plan", authenticateToken, getPlan)
+routes.delete("/:planId/plan", authenticateToken, deletePlan)
+routes.patch("/:planId/plan", authenticateToken, updatePlan)
+
+// subscriptions
+routes.post("/subscription", authenticateToken, createSubscription);
+routes.get("/subscriptions", authenticateToken, getSubscriptions)
+routes.get("/:subscriptionId/subscription", authenticateToken, getSubscription)
+routes.delete("/:subscriptionId/subscription", authenticateToken, deleteSubscription)
+routes.patch("/:subscriptionId/subscription", authenticateToken, updateSubscription)
 
 
 export default routes

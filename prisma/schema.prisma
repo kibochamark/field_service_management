@@ -15,32 +15,30 @@ datasource db {
 
 //company users as well superadmin
 model User {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  email         String   @unique
-  firstName     String
-  lastName      String
-  googleID      String?
-  appleID       String?
-  password      String?
-  salt          String?  @default("")
-  profile       Profile?
-  enabled       Boolean  @default(false)
-  company       Company? @relation(fields: [companyId], references: [id])
-  companyId     String?  @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
-  role          Role     @relation(fields: [roleId], references: [id])
-  roleId        String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
- 
-  permissions   String[]
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  firstName String
+  lastName  String
+  googleID  String?
+  appleID   String?
+  password  String?
+  salt      String?  @default("")
+  profile   Profile?
+  enabled   Boolean  @default(false)
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?  @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    String   @db.ObjectId // relation scalar field  (used in the `@relation` attribute above)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions String[]
 
   Invoice Invoice[]
 
   JobTechnician JobTechnician[]
 
   InvoiceWorkflow InvoiceWorkflow[]
-
-
 
   Job Job[]
 }
@@ -81,8 +79,6 @@ model Client {
 
   Invoice Invoice[]
 
-
-
   Job Job[]
 }
 
@@ -100,7 +96,7 @@ model Company {
   addressline2 String?
   image        Photo?
 
-  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   users          User[]
   enabled        Boolean       @default(false)
   createdAt      DateTime      @default(now())
@@ -137,11 +133,11 @@ model Job {
   jobType      JobType         @relation(fields: [jobTypeId], references: [id])
   jobTypeId    String          @db.ObjectId
   location     Address?
-  status       JobStatus   @default(CREATED)
-  dispatcher   User       @relation(fields: [dispatcherId], references: [id])
-  dispatcherId String     @db.ObjectId
-  clients      Client      @relation(fields: [clientId], references: [id]) // Relations to handle multiple clients @relation(fields: [clientsid], references: [id])
-  clientId    String       @db.ObjectId
+  status       JobStatus       @default(CREATED)
+  dispatcher   User            @relation(fields: [dispatcherId], references: [id])
+  dispatcherId String          @db.ObjectId
+  clients      Client          @relation(fields: [clientId], references: [id]) // Relations to handle multiple clients @relation(fields: [clientsid], references: [id])
+  clientId     String          @db.ObjectId
   technicians  JobTechnician[] // Relations to handle multiple technicians
   jobschedule  JobSchedule?
   company      Company         @relation(fields: [companyId], references: [id])
@@ -153,9 +149,6 @@ model Job {
   Workflows Workflows[]
   Invoice   Invoice[]
 }
-
-
-
 
 model JobTechnician {
   id           String @id @default(auto()) @map("_id") @db.ObjectId
@@ -187,7 +180,8 @@ model Subscription {
   endDate   DateTime
   plan      SubscriptionPlan?  @relation(fields: [planId], references: [id])
   planId    String?            @db.ObjectId
-  status    SubscriptionStatus @default(NOTPAID)
+  status    SubscriptionStatus @default(ACTIVE)
+  isTrial   Boolean            @default(true)
 
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
@@ -215,9 +209,9 @@ model Invoice {
   id             String        @id @default(auto()) @map("_id") @db.ObjectId
   type           WorkFlowType  @default(JOB)
   client         Client        @relation(fields: [clientId], references: [id])
-  clientId       String        @db.ObjectId 
+  clientId       String        @db.ObjectId
   job            Job?          @relation(fields: [jobId], references: [id])
-  jobId          String?       @db.ObjectId @unique
+  jobId          String?       @unique @db.ObjectId
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   subscriptionId String?       @db.ObjectId
   company        Company       @relation(fields: [companyId], references: [id])
@@ -337,7 +331,6 @@ enum JobStatus {
   CANCELLED
 }
 
-
 enum JobRecurrence {
   DAILY
   WEEKLY
@@ -347,13 +340,15 @@ enum JobRecurrence {
 enum PlanDuration {
   YEARLY
   MONTHLY
-  WEEKLY
+  QUARTERLY
+  SEMI_ANNUALLY
 }
 
 enum SubscriptionStatus {
-  PAID
+  ACTIVE
+  SUSPENDED
+  CANCELED
   EXPIRED
-  NOTPAID
 }
 
 enum WorkFlowStatus {
