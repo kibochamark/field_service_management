@@ -23,13 +23,22 @@ export default passport.use(
                     googleID: true,
                     appleID: true,
                     enabled: true,
-                    company: true,
+                    company:{
+                        select:{
+                            subscription:{
+                                select:{
+                                    status:true
+                                }
+                            }
+                        }
+                    },
                     role:{
                         select:{
                             name:true
                         }
                     },
                     createdAt: true,
+                    
                 }
             })
             if (!findUser) throw new Error("user not found")
