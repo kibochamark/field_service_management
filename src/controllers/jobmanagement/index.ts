@@ -73,6 +73,8 @@ const JobSchema = Joi.object({
   jobTypeId: Joi.string().required(), 
   clientId: Joi.string().required(),
   companyId: Joi.string().required(), 
+  dispatcherId: Joi.string().required(), 
+  
 });
 
 // Create Job API
@@ -89,23 +91,40 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
       return next(statusError); // Pass the error to the next middleware
     }
 
-    const { name, description, jobTypeId, clientId, companyId } = req.body;
+    const { name, description, jobTypeId, clientId, companyId, dispatcherId } = req.body;
+
 
     // Create the job in the database
     const newJob = await prisma.job.create({
       data: {
         name,
         description,
-        jobType: {
-          connect: { id: jobTypeId }, // Connect to existing JobType
-        },
-        clients: {
-          connect: { id: clientId }, // Connect to existing Client
-        },
-        company: {
-          connect: { id: companyId }, // Connect to existing Company
-        },
+        jobTypeId,
+        dispatcherId,
+        companyId,
+        clientId
       },
+      select:{
+        id:true,
+        name:true,
+        description:true,
+        dispatcher:{
+          select:{
+            firstName:true
+          }
+        },
+        technicians:{
+          select:{
+            technician:{
+              select:{
+                firstName:true
+              }
+            }
+          }
+        },
+
+        status:true
+      }
     });
 
     // Return the created job data
@@ -279,19 +298,7 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
       }
 
       techniciansToConnect = technicianIds.map((id: string) => ({ technicianId:id, jobId:jobId })); // Map IDs to the format needed for Prisma
-    }
-
-    // // Update the job in the database
-    // const updatedJob = await prisma.job.update({
-    //   where: { id: jobId },
-    //   data: {
-    //     location:location,
-    //     technicians: techniciansToConnect.length > 0 ? {
-    //       connect: techniciansToConnect,
-    //     } : undefined,
-    //     status: "ASSIGNED", // Always set status to 'ASSIGNED'
-    //   },
-    // });
+    }    
 
     // // perform a transcation so that both or none should be created
     const [updatejob,jobtech] =await prisma.$transaction(async (tx) => {
@@ -481,5 +488,78 @@ export const getJobTypes = async (req: Request, res: Response, next: NextFunctio
       statusError.statusCode = 501;
       statusError.message = e.message;
       return next(statusError);
+  }
+};
+
+
+//Schedule job
+const JobScheduleSchema = Joi.object({
+  jobSchedule: Joi.object({
+    startDate: Joi.date().required(), 
+    endDate: Joi.date().optional(), 
+    recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY").optional(), 
+  }).required(),
+});
+
+export const scheduleJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+  const jobId = req.params.jobId;
+
+  try {
+    // Validate the request body against the schema
+    const { error } = JobScheduleSchema.validate(req.body);
+    if (error) {
+      statusError.message = error.details[0].message; // Set the error message from Joi validation
+      statusError.statusCode = 400; // Bad Request
+      statusError.status = "fail";
+      return next(statusError); // Pass the error to the next middleware
+    }
+
+    const { jobSchedule } = req.body;
+    const { startDate, endDate, recurrence } = jobSchedule;
+
+    // Find the existing job
+    const existingJob = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!existingJob) {
+      statusError.message = "Job not found"; // Handle case where job does not exist
+      statusError.statusCode = 404; // Not Found
+      statusError.status = "fail";
+      return next(statusError); // Pass the error to the next middleware
+    }
+
+    // Check if the endDate is earlier than the startDate
+    if (endDate && new Date(endDate) < new Date(startDate)) {
+      statusError.message = "End date cannot be earlier than start date"; // Handle invalid date range
+      statusError.statusCode = 400; // Bad Request
+      statusError.status = "fail";
+      return next(statusError); // Pass the error to the next middleware
+    }
+
+    // Update the job with schedule information
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        jobschedule: {
+          startDate: new Date(startDate),
+          endDate: endDate ? new Date(endDate) : new Date(startDate),
+          recurrence: recurrence || null, 
+        },
+        status: "SCHEDULED", // Set job status to SCHEDULED
+      },
+    });
+
+    // Return the updated job data
+    return res.status(200).json({
+      status: "success",
+      data: updatedJob,
+    });
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500; // Internal Server Error
+    statusError.message = e.message; // Set the error message
+    return next(statusError); // Pass the error to the next middleware
   }
 };
