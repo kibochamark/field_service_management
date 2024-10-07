@@ -595,3 +595,47 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
     next(statusError);
   }
 };
+
+export const updateJob = async (req: Request, res: Response) => {
+  try {
+    // Extract the job ID from the route parameters
+    const { jobId } = req.params;
+
+    // Check if the job exists
+    const existingJob = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!existingJob) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    // Get the update data from the request body
+    const { name, description, jobTypeId, location, status, dispatcherId, clientId, technicians, companyId, jobschedule } = req.body;
+
+    // Perform the update
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        name,
+        description,
+        jobTypeId,
+        location,
+        status,
+        dispatcherId,
+        clientId,
+        technicians,
+        companyId,
+        jobschedule,
+      },
+    });
+
+    return res.status(200).json({ message: 'Job updated successfully', job: updatedJob });
+  } catch (error) {
+    console.error('Error updating the job:', error);
+    return res.status(500).json({
+      message: 'An error occurred while updating the job',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
