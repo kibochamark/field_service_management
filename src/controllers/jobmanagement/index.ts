@@ -563,3 +563,35 @@ export const scheduleJob = async (req: Request, res: Response, next: NextFunctio
     return next(statusError); // Pass the error to the next middleware
   }
 };
+export const deleteJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { jobId } = req.params;
+
+    // First, delete all related JobTechnician entries for the job
+    await prisma.jobTechnician.deleteMany({
+      where: {
+        jobId: jobId,
+      },
+    });
+
+    // Then, delete the Job itself
+    const deletedJob = await prisma.job.delete({
+      where: {
+        id: jobId,
+      },
+    });
+
+    // Return success response
+    return res.status(200).json({
+      message: "Job deleted successfully",
+      data: deletedJob,
+    }).end();
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
