@@ -624,8 +624,7 @@ export const updateJob = async (req: Request, res: Response) => {
         status,
         dispatcherId,
         clientId,
-        technicians,
-        companyId,
+        technicians,        
         jobschedule,
       },
     });
