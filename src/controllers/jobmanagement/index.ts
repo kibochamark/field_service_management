@@ -563,3 +563,78 @@ export const scheduleJob = async (req: Request, res: Response, next: NextFunctio
     return next(statusError); // Pass the error to the next middleware
   }
 };
+export const deleteJob = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+
+  try {
+    const { jobId } = req.params;
+
+    // First, delete all related JobTechnician entries for the job
+    await prisma.jobTechnician.deleteMany({
+      where: {
+        jobId: jobId,
+      },
+    });
+
+    // Then, delete the Job itself
+    const deletedJob = await prisma.job.delete({
+      where: {
+        id: jobId,
+      },
+    });
+
+    // Return success response
+    return res.status(200).json({
+      message: "Job deleted successfully",
+      data: deletedJob,
+    }).end();
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+};
+
+export const updateJob = async (req: Request, res: Response) => {
+  try {
+    // Extract the job ID from the route parameters
+    const { jobId } = req.params;
+
+    // Check if the job exists
+    const existingJob = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!existingJob) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    // Get the update data from the request body
+    const { name, description, jobTypeId, location, status, dispatcherId, clientId, technicians, companyId, jobschedule } = req.body;
+
+    // Perform the update
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        name,
+        description,
+        jobTypeId,
+        location,
+        status,
+        dispatcherId,
+        clientId,
+        technicians,        
+        jobschedule,
+      },
+    });
+
+    return res.status(200).json({ message: 'Job updated successfully', job: updatedJob });
+  } catch (error) {
+    console.error('Error updating the job:', error);
+    return res.status(500).json({
+      message: 'An error occurred while updating the job',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
