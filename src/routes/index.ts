@@ -19,6 +19,7 @@ import { addBulkJobTypes, assignJob, createJob, deleteJob, getAllJobs, getJob, g
 import { createInvoice } from "../controllers/invoices/create"
 import { deleteInvoice, getAllInvoices, getInvoice } from "../controllers/invoices"
 import { updateInvoice } from "../controllers/invoices/update"
+import { getJobWorkflow } from "../controllers/workflow"
 
 
 const routes= Router()
@@ -56,6 +57,9 @@ routes.delete("/:companyid/company", authenticateToken, deleteCompany)
 routes.get("/:companyid/employees", authenticateToken, getEmployees)
 routes.put("/:userid/profile", authenticateToken, UpdateCompanyUserProfileInformation)
 routes.get("/:companyid/technician", authenticateToken, getTechnician)
+
+//workflow
+routes.get("/:companyid/workflow", authenticateToken, getJobWorkflow)
 
 
 
