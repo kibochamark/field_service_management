@@ -93,7 +93,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
 
     const { name, description, jobTypeId, clientId, companyId, dispatcherId } = req.body;
 
-
+    const [newJob, newWorkflow] =await prisma.$transaction(async (tx) => {
     // Create the job in the database
     const newJob = await prisma.job.create({
       data: {
@@ -126,6 +126,18 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
         status:true
       }
     });
+    //create workflow
+     const newWorkflow = await prisma.workflows.create({
+        data:{
+          status : "CREATED",
+          jobId : newJob.id,
+
+        }
+     });
+
+    return [newJob, newWorkflow]
+  
+  })
 
     // Return the created job data
     return res.status(201).json({
@@ -139,104 +151,6 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
     return next(statusError); // Pass the error to the next middleware
   }
 };
-
-
-// // Joi Schema for Job Update
-// const JobUpdateSchema = Joi.object({
-//   name: Joi.string().optional(),
-//   description: Joi.string().optional(),
-//   jobTypeId: Joi.string().optional(), // Reference to JobType (if updating)
-//   clientsId: Joi.string().optional(), // Reference to Client (if updating)
-//   companyId: Joi.string().optional(), // Reference to Company (if updating)
-//   technicianIds: Joi.array().items(Joi.string()).optional(), // Array of technician IDs to connect
-// });
-
-// // Update Job API
-// export const assignJob = async (req: Request, res: Response, next: NextFunction) => {
-//   let statusError: GlobalError = new Error(""); 
-//   const jobId = req.params.id; 
-
-//   try {
-//     // Validate the request body against the schema
-//     const { error } = JobUpdateSchema.validate(req.body);
-//     if (error) {
-//       statusError.message = error.details[0].message; // Set the error message from Joi validation
-//       statusError.statusCode = 400; // Bad Request
-//       statusError.status = "fail";
-//       return next(statusError); // Pass the error to the next middleware
-//     }
-
-//     const { name, description, jobTypeId, clientsId, companyId, technicianIds } = req.body;
-
-//     // Find the existing job
-//     const existingJob = await prisma.job.findUnique({
-//       where: { id: jobId },
-//       include: {
-//         technicians: true, // Include technicians to check current associations
-//       },
-//     });
-
-//     if (!existingJob) {
-//       statusError.message = "Job not found"; // Handle case where job does not exist
-//       statusError.statusCode = 404; // Not Found
-//       statusError.status = "fail";
-//       return next(statusError); // Pass the error to the next middleware
-//     }
-
-//     // Prepare the technician connection
-//     let techniciansToConnect = [];
-//     if (technicianIds && technicianIds.length > 0) {
-//       // Validate if technicians exist in the database
-//       const technicians = await prisma.user.findMany({
-//         where: { id: { in: technicianIds } }, // Find technicians by the provided IDs
-//       });
-
-//       // Check if all provided IDs are valid
-//       if (technicians.length !== technicianIds.length) {
-//         statusError.message = "One or more technician IDs are invalid"; // Error message for invalid IDs
-//         statusError.statusCode = 400; // Bad Request
-//         statusError.status = "fail";
-//         return next(statusError); // Pass the error to the next middleware
-//       }
-
-//       techniciansToConnect = technicianIds.map((id:string) => ({ id })); // Map IDs to the format needed for Prisma
-//     }
-
-//     // Update the job in the database
-//     const updatedJob = await prisma.job.update({
-//       where: { id: jobId },
-//       data: {
-//         name: name || existingJob.name, // Only update if new value provided
-//         description: description || existingJob.description,
-//         jobType: jobTypeId ? { connect: { id: jobTypeId } } : undefined, // Update if jobTypeId is provided
-//         clients: clientsId ? { connect: { id: clientsId } } : undefined, // Update if clientsId is provided
-//         company: companyId ? { connect: { id: companyId } } : undefined, // Update if companyId is provided
-//         technicians: techniciansToConnect.length > 0 ? {
-//           connect: techniciansToConnect,
-//         } : undefined,
-//         status: "ASSIGNED", // Always set status to 'ASSIGNED'
-//       },
-//     });
-
-//     // Return the updated job data
-//     return res.status(200).json({
-//       status: "success",
-//       data: updatedJob,
-//     });
-//   } catch (e: any) {
-//     statusError.status = "fail";
-//     statusError.statusCode = 500; // Internal Server Error
-//     statusError.message = e.message; // Set the error message
-//     return next(statusError); // Pass the error to the next middleware
-//   }
-// };
-
-
-/**
- * Author Mark Kibocha 2/10/24
- */
-
-
 
 // Joi Schema for Job Update
 const JobUpdateSchema = Joi.object({
@@ -327,6 +241,25 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
         status: "ASSIGNED", // Always set status to 'ASSIGNED'
       },
     });
+
+    //create workfow
+
+  const findWorkflow = await prisma.workflows.findFirst({
+
+   where: {jobId: jobId},
+  }    
+  );
+
+  const updateWorkflow = await prisma.workflows.update({
+    where: {id : findWorkflow?.id as string},
+    data: {
+      status : "ASSIGNED",      
+    }
+
+  });
+
+
+  
 
 
       return [updatedJob, jobtech]
@@ -538,18 +471,42 @@ export const scheduleJob = async (req: Request, res: Response, next: NextFunctio
       return next(statusError); // Pass the error to the next middleware
     }
 
-    // Update the job with schedule information
-    const updatedJob = await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        jobschedule: {
-          startDate: new Date(startDate),
-          endDate: endDate ? new Date(endDate) : new Date(startDate),
-          recurrence: recurrence || null, 
-        },
-        status: "SCHEDULED", // Set job status to SCHEDULED
-      },
-    });
+
+    const [updatedJob, updateWorkflow] =await prisma.$transaction(async (tx) => {
+
+        // Update the job with schedule information
+        const updatedJob = await prisma.job.update({
+          where: { id: jobId },
+          data: {
+            jobschedule: {
+              startDate: new Date(startDate),
+              endDate: endDate ? new Date(endDate) : new Date(startDate),
+              recurrence: recurrence || null, 
+            },
+            status: "SCHEDULED", // Set job status to SCHEDULED
+          },
+        });
+
+    //update workfow
+
+
+  const findWorkflow = await prisma.workflows.findFirst({
+
+   where: {jobId: jobId},
+  }    
+  );
+  
+  const updateWorkflow = await prisma.workflows.update({
+    where: {id : findWorkflow?.id as string},
+    data: {
+      status : "SCHEDULED",      
+    }
+
+  });
+      return [updatedJob, updateWorkflow]
+
+  })
+
 
     // Return the updated job data
     return res.status(200).json({
@@ -563,6 +520,8 @@ export const scheduleJob = async (req: Request, res: Response, next: NextFunctio
     return next(statusError); // Pass the error to the next middleware
   }
 };
+
+
 export const deleteJob = async (req: Request, res: Response, next: NextFunction) => {
   let statusError: GlobalError = new Error("");
 
@@ -596,6 +555,49 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+// export const updateJob = async (req: Request, res: Response) => {
+//   try {
+//     // Extract the job ID from the route parameters
+//     const { jobId } = req.params;
+
+//     // Check if the job exists
+//     const existingJob = await prisma.job.findUnique({
+//       where: { id: jobId },
+//     });
+
+//     if (!existingJob) {
+//       return res.status(404).json({ message: 'Job not found' });
+//     }
+
+//     // Get the update data from the request body
+//     const { name, description, jobTypeId, location, status, dispatcherId, clientId, technicians, companyId, jobschedule } = req.body;
+
+//     // Perform the update
+//     const updatedJob = await prisma.job.update({
+//       where: { id: jobId },
+//       data: {
+//         name,
+//         description,
+//         jobTypeId,
+//         location,
+//         status,
+//         dispatcherId,
+//         clientId,
+//         technicians,        
+//         jobschedule,
+//       },
+//     });
+
+//     return res.status(200).json({ message: 'Job updated successfully', job: updatedJob });
+//   } catch (error) {
+//     console.error('Error updating the job:', error);
+//     return res.status(500).json({
+//       message: 'An error occurred while updating the job',
+//       error: error instanceof Error ? error.message : 'Unknown error',
+//     });
+//   }
+// };
+
 export const updateJob = async (req: Request, res: Response) => {
   try {
     // Extract the job ID from the route parameters
@@ -613,20 +615,53 @@ export const updateJob = async (req: Request, res: Response) => {
     // Get the update data from the request body
     const { name, description, jobTypeId, location, status, dispatcherId, clientId, technicians, companyId, jobschedule } = req.body;
 
-    // Perform the update
-    const updatedJob = await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        name,
-        description,
-        jobTypeId,
-        location,
-        status,
-        dispatcherId,
-        clientId,
-        technicians,        
-        jobschedule,
-      },
+    // Use a transaction to ensure both job and workflow updates are performed together
+    const [updatedJob, jobTech] = await prisma.$transaction(async (tx) => {
+      // Update the job technicians if provided
+      let connectList: string | any[] = [];
+      if (technicians && technicians.length > 0) {
+        await tx.jobTechnician.createMany({
+          data: technicians.map((techId: string) => ({ jobId, technicianId: techId })),
+        });
+
+        const jobTechs = await tx.jobTechnician.findMany({
+          where: { jobId },
+        });
+
+        connectList = jobTechs.map((jobTech) => ({ id: jobTech.id }));
+      }
+
+      // Update the job in the database
+      const updatedJob = await tx.job.update({
+        where: { id: jobId },
+        data: {
+          name,
+          description,
+          jobTypeId,
+          location,
+          status,
+          dispatcherId,
+          clientId,
+          technicians: connectList.length > 0 ? { connect: connectList } : undefined,
+          jobschedule,
+        },
+      });
+
+      // Check if the status has changed before updating the workflow
+      if (existingJob.status !== status) {
+        const findWorkflow = await tx.workflows.findFirst({
+          where: { jobId },
+        });
+
+        if (findWorkflow) {
+          await tx.workflows.update({
+            where: { id: findWorkflow.id },
+            data: { status },
+          });
+        }
+      }
+
+      return [updatedJob, connectList];
     });
 
     return res.status(200).json({ message: 'Job updated successfully', job: updatedJob });

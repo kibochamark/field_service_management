@@ -199,9 +199,8 @@ model Subscription {
 model Workflows {
   id             String         @id @default(auto()) @map("_id") @db.ObjectId
   type           WorkFlowType   @default(JOB)
-  status         WorkFlowStatus @default(PENDING)
-  steps          WorkflowSteps
-  job            Job?           @relation(fields: [jobId], references: [id])
+  status         WorkFlowStatus @default(PENDING)  
+  job            Job?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId          String?        @db.ObjectId
   subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
   subscriptionId String?        @db.ObjectId
@@ -334,7 +333,7 @@ enum JobStatus {
   SCHEDULED
   ONGOING
   COMPLETED
-  CANCELLED
+  CANCELED
 }
 
 
@@ -361,6 +360,9 @@ enum WorkFlowStatus {
   CREATED
   COMPLETED
   INPROGRESS
+  ASSIGNED
+  SCHEDULED
+  CANCELED
 }
 
 enum WorkFlowType {
