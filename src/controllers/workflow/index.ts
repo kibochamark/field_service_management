@@ -13,15 +13,16 @@ export const getJobWorkflow = async (req: Request, res: Response, next: NextFunc
     const jobWorkflows = await prisma.workflows.findMany({
       where: {
         job: { companyId: companyId },
-        type: 'JOB', 
+        type: 'JOB',       
+
       },
       include: {
+        Steps:true,
         job: {
           select: {
             id: true,
             name: true,
-            description: true,
-            status: true,
+            description: true,                        
             createdAt: true,
             updatedAt: true,
             technicians: {
