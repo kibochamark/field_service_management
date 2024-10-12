@@ -1,25 +1,38 @@
-import { NextFunction, Request, Response } from "express";
-import prisma from "../../utils/prismaConfig"; 
-import { GlobalError } from "../../types/errorTypes"; 
+import { PrismaClient } from '@prisma/client';
+import { Request, Response, NextFunction } from 'express';
 
+const prisma = new PrismaClient();
 
 export const getJobWorkflow = async (req: Request, res: Response, next: NextFunction) => {
-  let statusError: GlobalError = new Error(""); // Initialize a new GlobalError object
+  let statusError: Error = new Error("");
 
   try {
     const { companyId } = req.params;
 
-    // Fetch jobs that belong to the specified companyId
-    const companyJobs = await prisma.job.findMany({
-      where: { companyId },
+    
+    const jobWorkflows = await prisma.workflows.findMany({
+      where: {
+        job: { companyId: companyId },
+        type: 'JOB', 
+      },
       include: {
-        technicians: {
+        job: {
           select: {
-            technician: {
+            id: true,
+            name: true,
+            description: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            technicians: {
               select: {
-                id: true,
-                firstName: true,
-                lastName: true,
+                technician: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
               },
             },
           },
@@ -27,36 +40,12 @@ export const getJobWorkflow = async (req: Request, res: Response, next: NextFunc
       },
     });
 
-    if (!companyJobs || companyJobs.length === 0) {
-      statusError.message = "No jobs found for this company";
-      statusError.statusCode = 404;
-      statusError.status = "fail";
-      return next(statusError); // Pass the error to the next middleware
-    }
-
-    // Format the response data
-    const formattedJobs = companyJobs.map((job) => ({
-      jobId: job.id,
-      name: job.name,
-      description: job.description,
-      status: job.status,
-      completionDate: job.updatedAt,
-      technicians: job.technicians.map((tech) => ({
-        id: tech.technician.id,
-        firstName: tech.technician.firstName,
-        lastName: tech.technician.lastName,
-      })),
-    }));
-
-    // Return the job details
-    return res.status(200).json({
-      status: "success",
-      data: formattedJobs,
-    });
+    // Return the list of job workflows
+    return res.status(200).json({ data: jobWorkflows });
   } catch (e: any) {
-    statusError.status = "fail";
-    statusError.statusCode = 500; // Internal Server Error
-    statusError.message = e.message; // Set the error message
-    return next(statusError); // Pass the error to the next middleware
+    statusError.message = e.message;
+    statusError.stack = e.stack;
+    res.status(500).json({ error: statusError.message });
+    next(statusError);
   }
 };
