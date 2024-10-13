@@ -99,7 +99,7 @@ export const createJob = async (
 
     const [newJob, newWorkflow] = await prisma.$transaction(async (tx) => {
       // Create the job in the database
-      const newJob = await prisma.job.create({
+      const newJob = await tx.job.create({
         data: {
           name,
           description,
@@ -131,7 +131,7 @@ export const createJob = async (
         },
       });
       //create workflow
-      const newWorkflow = await prisma.workflows.create({
+      const newWorkflow = await tx.workflows.create({
         data: {
           Steps: {
             create: [
