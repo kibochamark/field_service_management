@@ -251,8 +251,8 @@ export const assignJob = async (
           technicians:
             connectlist.length > 0
               ? {
-                  connect: connectlist,
-                }
+                connect: connectlist,
+              }
               : undefined,
           status: "ASSIGNED", // Always set status to 'ASSIGNED'
         },
@@ -271,7 +271,7 @@ export const assignJob = async (
             create: [
               {
                 status: "ASSIGNED",
-                
+
               },
             ],
           },
@@ -540,7 +540,7 @@ export const scheduleJob = async (
               create: [
                 {
                   status: "SCHEDULED",
-                  
+
                 },
               ],
             },
@@ -714,32 +714,34 @@ export const updateJob = async (req: Request, res: Response) => {
       if (existingJob.status !== status) {
         const findWorkflow = await tx.workflows.findFirst({
           where: { jobId },
-          
-          select:{
-            id:true,
-            Steps:true
+
+          select: {
+            id: true,
+            Steps: true
           }
         });
 
         if (findWorkflow) {
-          
+
           const steps = await prisma.steps.findFirst({
-            where:{
-              workflowId : findWorkflow.id,
-              status:status
+            where: {
+              workflowId: findWorkflow.id,
+              status: status
             }
           })
-          if(!steps){
+          if (!steps) {
             await tx.workflows.update({
               where: { id: findWorkflow.id },
-              data: { Steps: {
-                create: {
+              data: {
+                Steps: {
+                  create: {
                     status: status
+                  }
                 }
-              } },
+              },
             });
           }
-          
+
         }
       }
 
@@ -757,3 +759,94 @@ export const updateJob = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+
+
+const UpdateJobStatusSchema = Joi.object({
+  status: Joi.string().valid("CREATED", "ACCEPTED",
+    "ASSIGNED",
+    "SCHEDULED",
+    "ONGOING",
+    "COMPLETED",
+    "CANCELLED").required()
+
+})
+
+  ; export const updateJobStatus = async (req: Request, res: Response, next: NextFunction) => {
+    let statusError: GlobalError = new Error("");
+
+
+
+    try {
+      // Retrieve job types from the database
+      // Validate the request body against the schema
+      const { error } = UpdateJobStatusSchema.validate(req.body);
+      if (error) {
+        statusError.message = error.details[0].message; // Set the error message from Joi validation
+        statusError.statusCode = 400; // Bad Request
+        statusError.status = "fail";
+        return next(statusError); // Pass the error to the next middleware
+      }
+
+      const { status } = req.body;
+
+      //  retieve jobId
+      const { id } = req.params
+
+
+      const [updatedjob, updatedworkflow] = await prisma.$transaction(async (tx) => {
+
+        const updateJob = await tx.job.update({
+          where: {
+            id: id
+          },
+          data: {
+            status: status
+          },
+          select:{
+            status:true,
+            Workflows:{
+              select:{
+                id:true,
+                Steps:true
+              }
+            },
+            updatedAt:true
+
+          }
+        })
+
+        
+
+        const updatedworkflow = await tx.workflows.update({
+          where: {
+            id: updateJob.Workflows[0].id
+          },
+          data: {
+            Steps: {
+              create: {
+                status: status
+              }
+            }
+          }
+        })
+
+
+
+
+        return [updateJob, updatedworkflow]
+      })
+
+      return res.status(200).json({
+        message: "success",
+        data: { updatedjob, updatedworkflow }
+      })
+
+    } catch (e: any) {
+      statusError.status = "fail";
+      statusError.statusCode = 500;
+      statusError.message = e.message;
+      next(statusError);
+    }
+  }
