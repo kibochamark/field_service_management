@@ -15,12 +15,13 @@ import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
 // import { addBulkJobTypes, createJob, getAllJobs, getJob, getJobTypes, updateJob } from "../controllers/jobmanagement"
 import { UpdateCompanyUserProfileInformation } from "../controllers/profilemanagement"
-import { addBulkJobTypes, assignJob, createJob, deleteJob, getAllJobs, getJob, getJobTypes, scheduleJob, updateJob } from "../controllers/jobmanagement"
+import { addBulkJobTypes, assignJob, createJob, deleteJob, getAllJobs, getJob, getJobTypes, scheduleJob, updateJob, updateJobStatus } from "../controllers/jobmanagement"
 import { createInvoice } from "../controllers/invoices/create"
 import { deleteInvoice, getAllInvoices, getInvoice } from "../controllers/invoices"
 import { updateInvoice } from "../controllers/invoices/update"
 import { createPlan, deletePlan, getPlan, getPlans, updatePlan } from "../controllers/subscription/plans/create"
 import { createSubscription, deleteSubscription, getSubscription, getSubscriptions, updateSubscription } from "../controllers/subscription"
+import { getJobWorkflow } from "../controllers/workflow"
 
 
 const routes= Router()
@@ -59,6 +60,9 @@ routes.get("/:companyid/employees", authenticateToken, getEmployees)
 routes.put("/:userid/profile", authenticateToken, UpdateCompanyUserProfileInformation)
 routes.get("/:companyid/technician", authenticateToken, getTechnician)
 
+//workflow
+routes.get("/:companyid/workflow", authenticateToken, getJobWorkflow)
+
 
 
 // customers
@@ -80,6 +84,7 @@ routes.get("/:jobId/retrievejob", authenticateToken, getJob);
 routes.put("/:jobId/schedulejob", authenticateToken, scheduleJob);
 routes.delete("/:jobId/deletejob", authenticateToken, deleteJob);
 routes.put("/:jobId/editjob", authenticateToken, updateJob);
+routes.patch("/:id/updatejobstatus", authenticateToken, updateJobStatus);
 
 
 // invoices

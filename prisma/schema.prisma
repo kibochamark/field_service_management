@@ -192,17 +192,32 @@ model Subscription {
 
 model Workflows {
   id             String         @id @default(auto()) @map("_id") @db.ObjectId
-  type           WorkFlowType   @default(JOB)
-  status         WorkFlowStatus @default(PENDING)
-  steps          WorkflowSteps
-  job            Job?           @relation(fields: [jobId], references: [id])
+  type           WorkFlowType   @default(JOB) 
+  job            Job?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId          String?        @db.ObjectId
   subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
   subscriptionId String?        @db.ObjectId
-
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  Steps Steps[]
 }
+
+model Steps {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  workflow       Workflows      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowId     String       @db.ObjectId
+  status         WorkFlowStatus  @unique @default(CREATED)
+
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+}
+
+
+
 
 //payment and invoice models
 model Invoice {
@@ -293,9 +308,9 @@ type JobSchedule {
   recurrence JobRecurrence @default(DAILY)
 }
 
-type WorkflowSteps {
-  name   String
-  status WorkFlowStatus @default(PENDING)
+type WorkflowSteps { 
+  status WorkFlowStatus @default(CREATED)
+  createdAt DateTime @default(now())
 }
 
 type Permission {
@@ -326,9 +341,10 @@ enum JobStatus {
   CREATED
   ASSIGNED
   SCHEDULED
+  ACCEPTED
   ONGOING
   COMPLETED
-  CANCELLED
+  CANCELED
 }
 
 enum JobRecurrence {
@@ -355,7 +371,11 @@ enum WorkFlowStatus {
   PENDING
   CREATED
   COMPLETED
+  ACCEPTED
   INPROGRESS
+  ASSIGNED
+  SCHEDULED
+  CANCELED
 }
 
 enum WorkFlowType {

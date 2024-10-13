@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
 import prisma from "../../utils/prismaConfig"; // Adjust this path according to your project structure
 import { GlobalError } from "../../types/errorTypes"; // Assuming you have a GlobalError type for error handling
+import { stat } from "fs";
 
 // Joi Schema for Job
 // const JobSchema = Joi.object({
@@ -61,24 +62,26 @@ import { GlobalError } from "../../types/errorTypes"; // Assuming you have a Glo
 //   }
 // };
 
-
 /**
  * Author - Mark kibocha 2/10/24
- * 
+ *
  */
 // Joi Schema for Job
 const JobSchema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().required(),
-  jobTypeId: Joi.string().required(), 
+  jobTypeId: Joi.string().required(),
   clientId: Joi.string().required(),
-  companyId: Joi.string().required(), 
-  dispatcherId: Joi.string().required(), 
-  
+  companyId: Joi.string().required(),
+  dispatcherId: Joi.string().required(),
 });
 
 // Create Job API
-export const createJob = async (req: Request, res: Response, next: NextFunction) => {
+export const createJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error(""); // Initialize a new GlobalError object
 
   try {
@@ -91,40 +94,57 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
       return next(statusError); // Pass the error to the next middleware
     }
 
-    const { name, description, jobTypeId, clientId, companyId, dispatcherId } = req.body;
+    const { name, description, jobTypeId, clientId, companyId, dispatcherId } =
+      req.body;
 
-
-    // Create the job in the database
-    const newJob = await prisma.job.create({
-      data: {
-        name,
-        description,
-        jobTypeId,
-        dispatcherId,
-        companyId,
-        clientId
-      },
-      select:{
-        id:true,
-        name:true,
-        description:true,
-        dispatcher:{
-          select:{
-            firstName:true
-          }
+    const [newJob, newWorkflow] = await prisma.$transaction(async (tx) => {
+      // Create the job in the database
+      const newJob = await prisma.job.create({
+        data: {
+          name,
+          description,
+          jobTypeId,
+          dispatcherId,
+          companyId,
+          clientId,
         },
-        technicians:{
-          select:{
-            technician:{
-              select:{
-                firstName:true
-              }
-            }
-          }
-        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          dispatcher: {
+            select: {
+              firstName: true,
+            },
+          },
+          technicians: {
+            select: {
+              technician: {
+                select: {
+                  firstName: true,
+                },
+              },
+            },
+          },
 
-        status:true
-      }
+          status: true,
+        },
+      });
+      //create workflow
+      const newWorkflow = await prisma.workflows.create({
+        data: {
+          Steps: {
+            create: [
+              {
+                status: "CREATED",
+              },
+            ],
+          },
+          jobId: newJob.id,
+        },
+      });
+
+      return [newJob, newWorkflow];
     });
 
     // Return the created job data
@@ -140,117 +160,23 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
-
-// // Joi Schema for Job Update
-// const JobUpdateSchema = Joi.object({
-//   name: Joi.string().optional(),
-//   description: Joi.string().optional(),
-//   jobTypeId: Joi.string().optional(), // Reference to JobType (if updating)
-//   clientsId: Joi.string().optional(), // Reference to Client (if updating)
-//   companyId: Joi.string().optional(), // Reference to Company (if updating)
-//   technicianIds: Joi.array().items(Joi.string()).optional(), // Array of technician IDs to connect
-// });
-
-// // Update Job API
-// export const assignJob = async (req: Request, res: Response, next: NextFunction) => {
-//   let statusError: GlobalError = new Error(""); 
-//   const jobId = req.params.id; 
-
-//   try {
-//     // Validate the request body against the schema
-//     const { error } = JobUpdateSchema.validate(req.body);
-//     if (error) {
-//       statusError.message = error.details[0].message; // Set the error message from Joi validation
-//       statusError.statusCode = 400; // Bad Request
-//       statusError.status = "fail";
-//       return next(statusError); // Pass the error to the next middleware
-//     }
-
-//     const { name, description, jobTypeId, clientsId, companyId, technicianIds } = req.body;
-
-//     // Find the existing job
-//     const existingJob = await prisma.job.findUnique({
-//       where: { id: jobId },
-//       include: {
-//         technicians: true, // Include technicians to check current associations
-//       },
-//     });
-
-//     if (!existingJob) {
-//       statusError.message = "Job not found"; // Handle case where job does not exist
-//       statusError.statusCode = 404; // Not Found
-//       statusError.status = "fail";
-//       return next(statusError); // Pass the error to the next middleware
-//     }
-
-//     // Prepare the technician connection
-//     let techniciansToConnect = [];
-//     if (technicianIds && technicianIds.length > 0) {
-//       // Validate if technicians exist in the database
-//       const technicians = await prisma.user.findMany({
-//         where: { id: { in: technicianIds } }, // Find technicians by the provided IDs
-//       });
-
-//       // Check if all provided IDs are valid
-//       if (technicians.length !== technicianIds.length) {
-//         statusError.message = "One or more technician IDs are invalid"; // Error message for invalid IDs
-//         statusError.statusCode = 400; // Bad Request
-//         statusError.status = "fail";
-//         return next(statusError); // Pass the error to the next middleware
-//       }
-
-//       techniciansToConnect = technicianIds.map((id:string) => ({ id })); // Map IDs to the format needed for Prisma
-//     }
-
-//     // Update the job in the database
-//     const updatedJob = await prisma.job.update({
-//       where: { id: jobId },
-//       data: {
-//         name: name || existingJob.name, // Only update if new value provided
-//         description: description || existingJob.description,
-//         jobType: jobTypeId ? { connect: { id: jobTypeId } } : undefined, // Update if jobTypeId is provided
-//         clients: clientsId ? { connect: { id: clientsId } } : undefined, // Update if clientsId is provided
-//         company: companyId ? { connect: { id: companyId } } : undefined, // Update if companyId is provided
-//         technicians: techniciansToConnect.length > 0 ? {
-//           connect: techniciansToConnect,
-//         } : undefined,
-//         status: "ASSIGNED", // Always set status to 'ASSIGNED'
-//       },
-//     });
-
-//     // Return the updated job data
-//     return res.status(200).json({
-//       status: "success",
-//       data: updatedJob,
-//     });
-//   } catch (e: any) {
-//     statusError.status = "fail";
-//     statusError.statusCode = 500; // Internal Server Error
-//     statusError.message = e.message; // Set the error message
-//     return next(statusError); // Pass the error to the next middleware
-//   }
-// };
-
-
-/**
- * Author Mark Kibocha 2/10/24
- */
-
-
-
 // Joi Schema for Job Update
 const JobUpdateSchema = Joi.object({
   location: Joi.object({
     city: Joi.string().required(),
     zip: Joi.string().required(),
     state: Joi.string().required(),
-    otherinfo: Joi.string().optional()
+    otherinfo: Joi.string().optional(),
   }).required(),
   technicianIds: Joi.array().items(Joi.string()).required(), // Array of technician IDs to connect
 });
 
 // Update Job API
-export const assignJob = async (req: Request, res: Response, next: NextFunction) => {
+export const assignJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error("");
   const jobId = req.params.id;
 
@@ -297,42 +223,63 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
         return next(statusError); // Pass the error to the next middleware
       }
 
-      techniciansToConnect = technicianIds.map((id: string) => ({ technicianId:id, jobId:jobId })); // Map IDs to the format needed for Prisma
-    }    
+      techniciansToConnect = technicianIds.map((id: string) => ({
+        technicianId: id,
+        jobId: jobId,
+      })); // Map IDs to the format needed for Prisma
+    }
 
     // // perform a transcation so that both or none should be created
-    const [updatejob,jobtech] =await prisma.$transaction(async (tx) => {
+    const [updatejob, jobtech] = await prisma.$transaction(async (tx) => {
       const jobtech = await prisma.jobTechnician.createMany({
-          data: techniciansToConnect
-          
-      })
+        data: techniciansToConnect,
+      });
 
       const jobtechs = await prisma.jobTechnician.findMany({
-        where:{
-          jobId:jobId
-        }
-      })
+        where: {
+          jobId: jobId,
+        },
+      });
 
       let connectlist = jobtechs.map((job: any) => ({ id: job.id }));
-    
 
-    // Update the job in the database
-    const updatedJob = await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        location:location,
-        technicians:connectlist.length > 0 ? {
-          connect: connectlist,
-        } : undefined,
-        status: "ASSIGNED", // Always set status to 'ASSIGNED'
-      },
+      // Update the job in the database
+      const updatedJob = await prisma.job.update({
+        where: { id: jobId },
+        data: {
+          location: location,
+          technicians:
+            connectlist.length > 0
+              ? {
+                connect: connectlist,
+              }
+              : undefined,
+          status: "ASSIGNED", // Always set status to 'ASSIGNED'
+        },
+      });
+
+      //create workfow
+
+      const findWorkflow = await prisma.workflows.findFirst({
+        where: { jobId: jobId },
+      });
+
+      const updateWorkflow = await prisma.workflows.update({
+        where: { id: findWorkflow?.id as string },
+        data: {
+          Steps: {
+            create: [
+              {
+                status: "ASSIGNED",
+
+              },
+            ],
+          },
+        },
+      });
+
+      return [updatedJob, jobtech];
     });
-
-
-      return [updatedJob, jobtech]
-
-  })
-
 
     // Return the updated job data
     return res.status(200).json({
@@ -347,7 +294,11 @@ export const assignJob = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
-export const getJob = async (req: Request, res: Response, next: NextFunction) => {
+export const getJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error("");
 
   try {
@@ -357,42 +308,37 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
     const job = await prisma.job.findUnique({
       where: { id: jobId },
       include: {
-        
-            clients: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email:true
-              }
-            }
-        ,
+        clients: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
         technicians: {
           select: {
             technician: {
               select: {
                 id: true,
                 firstName: true,
-                lastName: true
-              }
-            }
-          }
+                lastName: true,
+              },
+            },
+          },
         },
         jobType: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
-    console.log(job, "job")
-
-
-    
+    console.log(job, "job");
 
     // Return the job details
-    return res.status(200).json({ data: job }).end()
+    return res.status(200).json({ data: job }).end();
     // return res.status(200).json({ message:"success"}).end()
   } catch (e: any) {
     statusError.status = "fail";
@@ -402,7 +348,11 @@ export const getJob = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const addBulkJobTypes = async (req: Request, res: Response, next: NextFunction) => {
+export const addBulkJobTypes = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error("");
 
   try {
@@ -418,14 +368,17 @@ export const addBulkJobTypes = async (req: Request, res: Response, next: NextFun
     // Create bulk job types
     const createdJobTypes = await prisma.jobType.createMany({
       data: jobTypes.map((name: string) => ({
-        name
-      })),      
+        name,
+      })),
     });
 
-    return res.status(201).json({
-      message: "Job types created successfully",
-      createdJobTypes
-    }).end();
+    return res
+      .status(201)
+      .json({
+        message: "Job types created successfully",
+        createdJobTypes,
+      })
+      .end();
   } catch (error: any) {
     statusError.message = error.message;
     statusError.status = "fail";
@@ -434,7 +387,11 @@ export const addBulkJobTypes = async (req: Request, res: Response, next: NextFun
   }
 };
 
-export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllJobs = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error("");
 
   try {
@@ -442,15 +399,25 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
 
     // Fetch all jobs that belong to the specified companyId
     const jobs = await prisma.job.findMany({
-      where: { companyId }, include: {clients: 
-          {select:
-            {id:true, firstName:true, lastName:true, email:true}} , technicians:{select:{technician:{select:{id:true, firstName:true, lastName:true}}}}, jobType:{select:{id:true, name:true}}}
-      
-    });  
-    
-    console.log(jobs, "them jobs")
+      where: { companyId },
+      include: {
+        clients: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        technicians: {
+          select: {
+            technician: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+          },
+        },
+        jobType: { select: { id: true, name: true } },
+      },
+    });
+
+    console.log(jobs, "them jobs");
     // Return the list of jobs
-    return res.status(200).json({data:jobs});
+    return res.status(200).json({ data: jobs });
   } catch (e: any) {
     statusError.status = "fail";
     statusError.statusCode = 500;
@@ -458,50 +425,57 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     next(statusError);
   }
 };
-export const getJobTypes = async (req: Request, res: Response, next: NextFunction) => {
+export const getJobTypes = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error("");
 
   try {
-      // Retrieve job types from the database
-      const jobTypes = await prisma.jobType.findMany({
-          select: {
-              id: true,
-              name: true,              
-          },
-      });
+    // Retrieve job types from the database
+    const jobTypes = await prisma.jobType.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
 
-      // Check if job types are found
-      if (!jobTypes || jobTypes.length === 0) {
-          statusError.message = "No job types found";
-          statusError.statusCode = 404;
-          statusError.status = "fail";
-          return next(statusError);
-      }
-
-      // Return job types
-      return res.status(200).json({
-          status: "success",
-          data: jobTypes,
-      });
-  } catch (e: any) {
+    // Check if job types are found
+    if (!jobTypes || jobTypes.length === 0) {
+      statusError.message = "No job types found";
+      statusError.statusCode = 404;
       statusError.status = "fail";
-      statusError.statusCode = 501;
-      statusError.message = e.message;
       return next(statusError);
+    }
+
+    // Return job types
+    return res.status(200).json({
+      status: "success",
+      data: jobTypes,
+    });
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 501;
+    statusError.message = e.message;
+    return next(statusError);
   }
 };
-
 
 //Schedule job
 const JobScheduleSchema = Joi.object({
   jobSchedule: Joi.object({
-    startDate: Joi.date().required(), 
-    endDate: Joi.date().optional(), 
-    recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY").optional(), 
+    startDate: Joi.date().required(),
+    endDate: Joi.date().optional(),
+    recurrence: Joi.string().valid("DAILY", "WEEKLY", "MONTHLY").optional(),
   }).required(),
 });
 
-export const scheduleJob = async (req: Request, res: Response, next: NextFunction) => {
+export const scheduleJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error("");
   const jobId = req.params.jobId;
 
@@ -538,18 +512,43 @@ export const scheduleJob = async (req: Request, res: Response, next: NextFunctio
       return next(statusError); // Pass the error to the next middleware
     }
 
-    // Update the job with schedule information
-    const updatedJob = await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        jobschedule: {
-          startDate: new Date(startDate),
-          endDate: endDate ? new Date(endDate) : new Date(startDate),
-          recurrence: recurrence || null, 
-        },
-        status: "SCHEDULED", // Set job status to SCHEDULED
-      },
-    });
+    const [updatedJob, updateWorkflow] = await prisma.$transaction(
+      async (tx) => {
+        // Update the job with schedule information
+        const updatedJob = await prisma.job.update({
+          where: { id: jobId },
+          data: {
+            jobschedule: {
+              startDate: new Date(startDate),
+              endDate: endDate ? new Date(endDate) : new Date(startDate),
+              recurrence: recurrence || null,
+            },
+            status: "SCHEDULED", // Set job status to SCHEDULED
+          },
+        });
+
+        //update workfow
+
+        const findWorkflow = await prisma.workflows.findFirst({
+          where: { jobId: jobId },
+        });
+
+        const updateWorkflow = await prisma.workflows.update({
+          where: { id: findWorkflow?.id as string },
+          data: {
+            Steps: {
+              create: [
+                {
+                  status: "SCHEDULED",
+
+                },
+              ],
+            },
+          },
+        });
+        return [updatedJob, updateWorkflow];
+      }
+    );
 
     // Return the updated job data
     return res.status(200).json({
@@ -563,7 +562,12 @@ export const scheduleJob = async (req: Request, res: Response, next: NextFunctio
     return next(statusError); // Pass the error to the next middleware
   }
 };
-export const deleteJob = async (req: Request, res: Response, next: NextFunction) => {
+
+export const deleteJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   let statusError: GlobalError = new Error("");
 
   try {
@@ -584,10 +588,13 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
     });
 
     // Return success response
-    return res.status(200).json({
-      message: "Job deleted successfully",
-      data: deletedJob,
-    }).end();
+    return res
+      .status(200)
+      .json({
+        message: "Job deleted successfully",
+        data: deletedJob,
+      })
+      .end();
   } catch (e: any) {
     statusError.status = "fail";
     statusError.statusCode = 500;
@@ -595,6 +602,49 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
     next(statusError);
   }
 };
+
+// export const updateJob = async (req: Request, res: Response) => {
+//   try {
+//     // Extract the job ID from the route parameters
+//     const { jobId } = req.params;
+
+//     // Check if the job exists
+//     const existingJob = await prisma.job.findUnique({
+//       where: { id: jobId },
+//     });
+
+//     if (!existingJob) {
+//       return res.status(404).json({ message: 'Job not found' });
+//     }
+
+//     // Get the update data from the request body
+//     const { name, description, jobTypeId, location, status, dispatcherId, clientId, technicians, companyId, jobschedule } = req.body;
+
+//     // Perform the update
+//     const updatedJob = await prisma.job.update({
+//       where: { id: jobId },
+//       data: {
+//         name,
+//         description,
+//         jobTypeId,
+//         location,
+//         status,
+//         dispatcherId,
+//         clientId,
+//         technicians,
+//         jobschedule,
+//       },
+//     });
+
+//     return res.status(200).json({ message: 'Job updated successfully', job: updatedJob });
+//   } catch (error) {
+//     console.error('Error updating the job:', error);
+//     return res.status(500).json({
+//       message: 'An error occurred while updating the job',
+//       error: error instanceof Error ? error.message : 'Unknown error',
+//     });
+//   }
+// };
 
 export const updateJob = async (req: Request, res: Response) => {
   try {
@@ -607,34 +657,196 @@ export const updateJob = async (req: Request, res: Response) => {
     });
 
     if (!existingJob) {
-      return res.status(404).json({ message: 'Job not found' });
+      return res.status(404).json({ message: "Job not found" });
     }
 
     // Get the update data from the request body
-    const { name, description, jobTypeId, location, status, dispatcherId, clientId, technicians, companyId, jobschedule } = req.body;
+    const {
+      name,
+      description,
+      jobTypeId,
+      location,
+      status,
+      dispatcherId,
+      clientId,
+      technicians,
+      companyId,
+      jobschedule,
+    } = req.body;
 
-    // Perform the update
-    const updatedJob = await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        name,
-        description,
-        jobTypeId,
-        location,
-        status,
-        dispatcherId,
-        clientId,
-        technicians,        
-        jobschedule,
-      },
+    // Use a transaction to ensure both job and workflow updates are performed together
+    const [updatedJob, jobTech] = await prisma.$transaction(async (tx) => {
+      // Update the job technicians if provided
+      let connectList: string | any[] = [];
+      if (technicians && technicians.length > 0) {
+        await tx.jobTechnician.createMany({
+          data: technicians.map((techId: string) => ({
+            jobId,
+            technicianId: techId,
+          })),
+        });
+
+        const jobTechs = await tx.jobTechnician.findMany({
+          where: { jobId },
+        });
+
+        connectList = jobTechs.map((jobTech) => ({ id: jobTech.id }));
+      }
+
+      // Update the job in the database
+      const updatedJob = await tx.job.update({
+        where: { id: jobId },
+        data: {
+          name,
+          description,
+          jobTypeId,
+          location,
+          status,
+          dispatcherId,
+          clientId,
+          technicians:
+            connectList.length > 0 ? { connect: connectList } : undefined,
+          jobschedule,
+        },
+      });
+
+      // Check if the status has changed before updating the workflow
+      if (existingJob.status !== status) {
+        const findWorkflow = await tx.workflows.findFirst({
+          where: { jobId },
+
+          select: {
+            id: true,
+            Steps: true
+          }
+        });
+
+        if (findWorkflow) {
+
+          const steps = await prisma.steps.findFirst({
+            where: {
+              workflowId: findWorkflow.id,
+              status: status
+            }
+          })
+          if (!steps) {
+            await tx.workflows.update({
+              where: { id: findWorkflow.id },
+              data: {
+                Steps: {
+                  create: {
+                    status: status
+                  }
+                }
+              },
+            });
+          }
+
+        }
+      }
+
+      return [updatedJob, connectList];
     });
 
-    return res.status(200).json({ message: 'Job updated successfully', job: updatedJob });
+    return res
+      .status(200)
+      .json({ message: "Job updated successfully", job: updatedJob });
   } catch (error) {
-    console.error('Error updating the job:', error);
+    console.error("Error updating the job:", error);
     return res.status(500).json({
-      message: 'An error occurred while updating the job',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: "An error occurred while updating the job",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
+
+
+
+
+const UpdateJobStatusSchema = Joi.object({
+  status: Joi.string().valid("CREATED", "ACCEPTED",
+    "ASSIGNED",
+    "SCHEDULED",
+    "ONGOING",
+    "COMPLETED",
+    "CANCELLED").required()
+
+})
+
+  ; export const updateJobStatus = async (req: Request, res: Response, next: NextFunction) => {
+    let statusError: GlobalError = new Error("");
+
+
+
+    try {
+      // Retrieve job types from the database
+      // Validate the request body against the schema
+      const { error } = UpdateJobStatusSchema.validate(req.body);
+      if (error) {
+        statusError.message = error.details[0].message; // Set the error message from Joi validation
+        statusError.statusCode = 400; // Bad Request
+        statusError.status = "fail";
+        return next(statusError); // Pass the error to the next middleware
+      }
+
+      const { status } = req.body;
+
+      //  retieve jobId
+      const { id } = req.params
+
+
+      const [updatedjob, updatedworkflow] = await prisma.$transaction(async (tx) => {
+
+        const updateJob = await tx.job.update({
+          where: {
+            id: id
+          },
+          data: {
+            status: status
+          },
+          select:{
+            status:true,
+            Workflows:{
+              select:{
+                id:true,
+                Steps:true
+              }
+            },
+            updatedAt:true
+
+          }
+        })
+
+        
+
+        const updatedworkflow = await tx.workflows.update({
+          where: {
+            id: updateJob.Workflows[0].id
+          },
+          data: {
+            Steps: {
+              create: {
+                status: status
+              }
+            }
+          }
+        })
+
+
+
+
+        return [updateJob, updatedworkflow]
+      })
+
+      return res.status(200).json({
+        message: "success",
+        data: { updatedjob, updatedworkflow }
+      })
+
+    } catch (e: any) {
+      statusError.status = "fail";
+      statusError.statusCode = 500;
+      statusError.message = e.message;
+      next(statusError);
+    }
+  }
