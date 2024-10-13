@@ -191,13 +191,13 @@ model Subscription {
 }
 
 model Workflows {
-  id             String         @id @default(auto()) @map("_id") @db.ObjectId
-  type           WorkFlowType   @default(JOB) 
-  job            Job?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId          String?        @db.ObjectId
-  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
-  subscriptionId String?        @db.ObjectId
-  
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  type           WorkFlowType  @default(JOB)
+  job            Job?          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId          String?       @db.ObjectId
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?       @db.ObjectId
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -205,19 +205,14 @@ model Workflows {
 }
 
 model Steps {
-  id             String         @id @default(auto()) @map("_id") @db.ObjectId
-  workflow       Workflows      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  workflowId     String       @db.ObjectId
-  status         WorkFlowStatus  @default(CREATED)
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  workflow   Workflows      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowId String         @db.ObjectId
+  status     WorkFlowStatus @unique
 
-  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
 }
-
-
-
 
 //payment and invoice models
 model Invoice {
@@ -308,9 +303,9 @@ type JobSchedule {
   recurrence JobRecurrence @default(DAILY)
 }
 
-type WorkflowSteps { 
-  status WorkFlowStatus @default(CREATED)
-  createdAt DateTime @default(now())
+type WorkflowSteps {
+  status    WorkFlowStatus @default(CREATED)
+  createdAt DateTime       @default(now())
 }
 
 type Permission {
