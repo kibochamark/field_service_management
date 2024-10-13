@@ -208,7 +208,7 @@ model Steps {
   id         String         @id @default(auto()) @map("_id") @db.ObjectId
   workflow   Workflows      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   workflowId String         @db.ObjectId
-  status     WorkFlowStatus @unique
+  status     WorkFlowStatus
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
