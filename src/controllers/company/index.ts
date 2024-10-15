@@ -447,134 +447,291 @@ export const updateCompany = async (req: Request, res: Response, next: NextFunct
 
 
 
-// create company employee
+// // create company employee
+// export async function createEmployee(req: Request, res: Response, next: NextFunction) {
+//     let statusError: GlobalError = new Error("")
+
+//     try {
+
+//         const { error, value } = employeeSchema.validate(req.body, { abortEarly: false });
+
+//         if (error) {
+//             statusError = new Error(JSON.stringify(
+//                 {
+//                     error: error.details.map(detail => detail.message),
+//                 }
+//             ))
+//             statusError.statusCode = 400
+//             statusError.status = "fail"
+//             next(statusError)
+
+//         }
+
+
+//         const { firstname, lastname, phonenumber, email, password, roleId, companyId, permissions } = value;
+
+//         // restrict user not create an employee if he/she is not a business owner or  business admin
+//         const user = req.user as any
+
+
+//         const role = await prisma.user.findUnique({
+//             where: {
+//                 id: user?.userId
+//             },
+//             select: {
+//                 role: {
+//                     select: {
+//                         name: true
+//                     }
+//                 }
+//             }
+//         })
+
+//         const roleofnewuser = await prisma.role.findUnique({
+//             where: {
+//                 id: roleId as string
+//             },
+//             select: {
+
+//                 name: true,
+//                 permissions: {
+//                     select: {
+//                         key: true
+//                     }
+//                 }
+
+//             }
+//         })
+
+
+//         const company = await prisma.company.findUnique({
+//             where: {
+//                 id: companyId
+//             },
+//             select: {
+//                 name: true
+//             }
+//         })
+
+//         // retrieve config that checks if business owner already exists
+
+//         const config = await prisma.config.findFirst()
+
+//         if ((role?.role.name !== "business owner") && (role?.role.name !== "business admin")) {
+//             statusError.statusCode = 400
+//             statusError.status = "fail"
+//             statusError.message = "You are not allowed to add employees"
+//             return next(statusError)
+
+//         }
+
+//         if (config?.businessownerexistense && roleofnewuser?.name === "business owner") {
+//             statusError.statusCode = 400
+//             statusError.status = "fail"
+//             statusError.message = "We can only have one business owner"
+//             return next(statusError)
+//         }
+
+
+//         if (roleofnewuser?.name === "client") {
+//             statusError.statusCode = 400
+//             statusError.status = "fail"
+//             statusError.message = "You cant add this role"
+//             return next(statusError)
+//         }
+
+
+
+//         if (!company) {
+//             statusError.statusCode = 400
+//             statusError.status = "fail"
+//             statusError.message = "Company does not exist"
+//             return next(statusError)
+//         }
+
+
+
+
+
+
+
+
+
+//         const { salt, hashedPassword } = await hashPassword(password)
+
+//         const newuser: any = await prisma.user.create({
+//             data: {
+//                 email: email,
+//                 password: hashedPassword,
+//                 salt: salt,
+//                 firstName: firstname,
+//                 lastName: lastname,
+//                 roleId: roleId,
+//                 companyId: companyId,
+//                 profile: {
+//                     set: {
+//                         phone: phonenumber
+
+//                     }
+//                 },
+//                 permissions: permissions
+//             },
+//             select: {
+//                 profile: true,
+//                 id: true,
+//                 email: true,
+//                 firstName: true,
+//                 lastName: true,
+//                 googleID: true,
+//                 appleID: true,
+//                 enabled: true,
+//                 company: {
+//                     select: {
+//                         name: true
+//                     }
+//                 },
+//                 role: {
+//                     select: {
+//                         name: true
+//                     }
+//                 },
+//                 createdAt: true,
+//             }
+
+//         })
+
+
+//         if (!newuser) {
+//             statusError.statusCode = 400
+//             statusError.status = "fail"
+//             statusError.message = "something went wrong"
+//             next(statusError)
+//         }
+
+//         console.log(newuser, "user")
+
+
+//         return res.status(201).json({
+//             status: "success",
+//             data: {
+//                 newuser
+//             }
+//         }).end()
+
+
+
+
+
+//     } catch (e: any) {
+//         let error: GlobalError = new Error(`${e.message}`)
+//         error.statusCode = 500
+//         error.status = "server error"
+//         next(error)
+//     }
+// }
 export async function createEmployee(req: Request, res: Response, next: NextFunction) {
-    let statusError: GlobalError = new Error("")
+    let statusError: GlobalError = new Error("");
 
     try {
-
+        // Validate the incoming data
         const { error, value } = employeeSchema.validate(req.body, { abortEarly: false });
 
         if (error) {
-            statusError = new Error(JSON.stringify(
-                {
-                    error: error.details.map(detail => detail.message),
-                }
-            ))
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            next(statusError)
-
+            statusError = new Error(JSON.stringify({
+                error: error.details.map(detail => detail.message),
+            }));
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            return next(statusError);
         }
-
 
         const { firstname, lastname, phonenumber, email, password, roleId, companyId, permissions } = value;
 
-        // restrict user not create an employee if he/she is not a business owner or  business admin
-        const user = req.user as any
-
+        // Check if the user is a business owner or admin
+        const user = req.user as any;
 
         const role = await prisma.user.findUnique({
-            where: {
-                id: user?.userId
-            },
+            where: { id: user?.userId },
             select: {
-                role: {
-                    select: {
-                        name: true
-                    }
-                }
-            }
-        })
+                role: { select: { name: true } },
+            },
+        });
 
         const roleofnewuser = await prisma.role.findUnique({
-            where: {
-                id: roleId as string
-            },
+            where: { id: roleId as string },
             select: {
-
                 name: true,
-                permissions: {
-                    select: {
-                        key: true
-                    }
-                }
-
-            }
-        })
-
+                permissions: { select: { key: true } },
+            },
+        });
 
         const company = await prisma.company.findUnique({
-            where: {
-                id: companyId
-            },
-            select: {
-                name: true
-            }
-        })
+            where: { id: companyId },
+            select: { name: true },
+        });
 
-        // retrieve config that checks if business owner already exists
-
-        const config = await prisma.config.findFirst()
-
+        // Check if the user is allowed to add employees
         if ((role?.role.name !== "business owner") && (role?.role.name !== "business admin")) {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "You are not allowed to add employees"
-            return next(statusError)
-
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            statusError.message = "You are not allowed to add employees";
+            return next(statusError);
         }
 
+        // Check if only one business owner can exist
+        const config = await prisma.config.findFirst();
         if (config?.businessownerexistense && roleofnewuser?.name === "business owner") {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "We can only have one business owner"
-            return next(statusError)
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            statusError.message = "We can only have one business owner";
+            return next(statusError);
         }
 
-
+        // Ensure the role is not "client"
         if (roleofnewuser?.name === "client") {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "You cant add this role"
-            return next(statusError)
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            statusError.message = "You can't add this role";
+            return next(statusError);
         }
 
-
-
+        // Check if the company exists
         if (!company) {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "Company does not exist"
-            return next(statusError)
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            statusError.message = "Company does not exist";
+            return next(statusError);
         }
 
+        // Check if the email already exists in the system
+        const existingUser = await prisma.user.findUnique({
+            where: { email },
+        });
 
+        if (existingUser) {
+            statusError.statusCode = 409; // Conflict status code
+            statusError.status = "fail";
+            statusError.message = "A user with this email address already exists. Please enter a different email to proceed.";
+            return next(statusError);
+        }
 
+        // Hash the password
+        const { salt, hashedPassword } = await hashPassword(password);
 
-
-
-
-
-
-        const { salt, hashedPassword } = await hashPassword(password)
-
+        // Create the new user
         const newuser: any = await prisma.user.create({
             data: {
-                email: email,
+                email,
                 password: hashedPassword,
-                salt: salt,
+                salt,
                 firstName: firstname,
                 lastName: lastname,
-                roleId: roleId,
-                companyId: companyId,
+                roleId,
+                companyId,
                 profile: {
-                    set: {
-                        phone: phonenumber
-
-                    }
+                    set: { phone: phonenumber },
                 },
-                permissions: permissions
+                permissions,
             },
             select: {
                 profile: true,
@@ -585,50 +742,35 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
                 googleID: true,
                 appleID: true,
                 enabled: true,
-                company: {
-                    select: {
-                        name: true
-                    }
-                },
-                role: {
-                    select: {
-                        name: true
-                    }
-                },
+                company: { select: { name: true } },
+                role: { select: { name: true } },
                 createdAt: true,
-            }
-
-        })
-
+            },
+        });
 
         if (!newuser) {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "something went wrong"
-            next(statusError)
+            statusError.statusCode = 400;
+            statusError.status = "fail";
+            statusError.message = "Something went wrong";
+            return next(statusError);
         }
 
-        console.log(newuser, "user")
+        console.log(newuser, "user");
 
-
+        // Return a success response when the employee is created
         return res.status(201).json({
             status: "success",
-            data: {
-                newuser
-            }
-        }).end()
-
-
-
-
+            data: { newuser },
+        }).end();
 
     } catch (e: any) {
-        let error: GlobalError = new Error(`${e.message}`)
-        error.statusCode = 500
-        error.status = "server error"
-        next(error)
+        let error: GlobalError = new Error(`${e.message}`);
+        error.statusCode = 500;
+        error.status = "server error";
+        return next(error);
     }
 }
+
 
 
 
