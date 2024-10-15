@@ -15,7 +15,7 @@ import { upload } from "../utils/multerStorage"
 import { auth } from "google-auth-library"
 // import { addBulkJobTypes, createJob, getAllJobs, getJob, getJobTypes, updateJob } from "../controllers/jobmanagement"
 import { UpdateCompanyUserProfileInformation } from "../controllers/profilemanagement"
-import { addBulkJobTypes, assignJob, createJob, deleteJob, getAllJobs, getJob, getJobTypes, scheduleJob, updateJob, updateJobStatus } from "../controllers/jobmanagement"
+import { addBulkJobTypes, assignJob, createJob, deleteJob, getAllJobs, getJob, getJobFeed, getJobTypes, scheduleJob, updateJob, updateJobStatus } from "../controllers/jobmanagement"
 import { createInvoice } from "../controllers/invoices/create"
 import { deleteInvoice, getAllInvoices, getInvoice } from "../controllers/invoices"
 import { updateInvoice } from "../controllers/invoices/update"
@@ -86,6 +86,7 @@ routes.put("/:jobId/schedulejob", authenticateToken, scheduleJob);
 routes.delete("/:jobId/deletejob", authenticateToken, deleteJob);
 routes.put("/:jobId/editjob", authenticateToken, updateJob);
 routes.patch("/:id/updatejobstatus", authenticateToken, updateJobStatus);
+routes.get("/:companyId/jobfeed", authenticateToken, getJobFeed);
 
 
 // invoices
