@@ -76,6 +76,10 @@ const JobSchema = Joi.object({
   dispatcherId: Joi.string().required(),
 });
 
+
+const JobGetSchema = Joi.object({
+  companyId: Joi.string().required()
+})
 // Create Job API
 export const createJob = async (
   req: Request,
@@ -804,20 +808,20 @@ const UpdateJobStatusSchema = Joi.object({
           data: {
             status: status
           },
-          select:{
-            status:true,
-            Workflows:{
-              select:{
-                id:true,
-                Steps:true
+          select: {
+            status: true,
+            Workflows: {
+              select: {
+                id: true,
+                Steps: true
               }
             },
-            updatedAt:true
+            updatedAt: true
 
           }
         })
 
-        
+
 
         const updatedworkflow = await tx.workflows.update({
           where: {
@@ -850,3 +854,54 @@ const UpdateJobStatusSchema = Joi.object({
       next(statusError);
     }
   }
+
+
+
+
+
+// get Recent Job Feed
+
+export const getJobFeed = async (req: Request, res: Response, next: NextFunction) => {
+  let statusError: GlobalError = new Error("");
+  try {
+    // Retrieve job types from the database
+    // Validate the request body against the schema
+    const { error, value } = JobGetSchema.validate(req.params);
+    if (error) {
+      statusError.message = error.details[0].message; // Set the error message from Joi validation
+      statusError.statusCode = 400; // Bad Request
+      statusError.status = "fail";
+      return next(statusError); // Pass the error to the next middleware
+    }
+
+    const { companyId } = value;
+
+    const jobs = await prisma.job.findMany({
+      where: {
+        companyId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 5
+
+    })
+
+
+    return res.status(200).json({
+      message: "success",
+      data: jobs
+    })
+
+  } catch (e: any) {
+    statusError.status = "fail";
+    statusError.statusCode = 500;
+    statusError.message = e.message;
+    next(statusError);
+  }
+
+}
+
+
+
+
