@@ -65,12 +65,12 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
 
 
 
-        if (userrole?.role.name !== "super admin" && userrole?.role.name !== "business owner") {
-            statusError.statusCode = 400
-            statusError.status = "fail"
-            statusError.message = "You are not allowed to perform this request"
-            return next(statusError)
-        }
+        // if (userrole?.role.name !== "super admin" && userrole?.role.name !== "business owner") {
+        //     statusError.statusCode = 400
+        //     statusError.status = "fail"
+        //     statusError.message = "You are not allowed to perform this request"
+        //     return next(statusError)
+        // }
 
         const users = await prisma.user.findMany({
             where: {
