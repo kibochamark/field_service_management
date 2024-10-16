@@ -60,6 +60,29 @@ export async function createSubscription(req: Request, res: Response, next: Next
         const { startDate, endDate, planId, companyId } = value;
 
 
+        const user = req.user as any
+
+        const userrole = await prisma.user.findUnique({
+            where: {
+                id: user?.userId
+            },
+            select: {
+                role: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+
+
+
+        if (userrole?.role.name !== "super admin" && userrole?.role.name !== "business owner") {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "You are not allowed to perform this request"
+            return next(statusError)
+        }
 
 
         const [sub, company] = await prisma.$transaction(async (tx) => {
@@ -237,6 +260,30 @@ export async function updateSubscription(req: Request, res: Response, next: Next
         const { startDate, endDate, planId, isTrial, status } = value;
 
 
+        
+        const user = req.user as any
+
+        const userrole = await prisma.user.findUnique({
+            where: {
+                id: user?.userId
+            },
+            select: {
+                role: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+
+
+
+        if (userrole?.role.name !== "super admin" && userrole?.role.name !== "business owner") {
+            statusError.statusCode = 400
+            statusError.status = "fail"
+            statusError.message = "You are not allowed to perform this request"
+            return next(statusError)
+        }
         // update a subscription for a specific company
         const sub = await prisma.subscription.update({
             where: {
