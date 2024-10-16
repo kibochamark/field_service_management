@@ -23,6 +23,7 @@ export default passport.use(
                     googleID: true,
                     appleID: true,
                     enabled: true,
+                    companyId:true,
                     company:{
                         select:{
                             subscription:{
