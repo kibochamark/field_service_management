@@ -341,6 +341,7 @@ export async function loginUser(req: express.Request, response: express.Response
                                       name:user?.firstName + " " + user?.lastName,
                         email:user?.email,
                         userId: user?.id,
+                        companyId:user?.companyId,
                         isSubscribed:user?.company?.subscription?.status === "ACTIVE"
             });
         })(req, response, next);
