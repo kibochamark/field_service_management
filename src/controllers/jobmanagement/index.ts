@@ -680,13 +680,18 @@ export const updateJob = async (req: Request, res: Response) => {
 
     // Use a transaction to ensure both job and workflow updates are performed together
     const [updatedJob, jobTech] = await prisma.$transaction(async (tx) => {
+      // Remove existing technicians associated with the job
+      await tx.jobTechnician.deleteMany({
+        where: { jobId },
+      });
+
       // Update the job technicians if provided
       let connectList: string | any[] = [];
       if (technicians && technicians.length > 0) {
         await tx.jobTechnician.createMany({
-          data: technicians.map((techId: string) => ({
+          data: technicians.map((id: { id: string }) => ({
             jobId,
-            technicianId: techId,
+            technicianId: id?.id,
           })),
         });
 
@@ -707,10 +712,8 @@ export const updateJob = async (req: Request, res: Response) => {
           location,
           status,
           dispatcherId,
-          clientId,
-          technicians:
-            connectList.length > 0 ? { connect: connectList } : undefined,
-          jobschedule,
+          clientId: clientId,
+          technicians: connectList.length > 0 ? { connect: connectList } : undefined,
         },
       });
 
@@ -718,43 +721,38 @@ export const updateJob = async (req: Request, res: Response) => {
       if (existingJob.status !== status) {
         const findWorkflow = await tx.workflows.findFirst({
           where: { jobId },
-
           select: {
             id: true,
-            Steps: true
-          }
+            Steps: true,
+          },
         });
 
         if (findWorkflow) {
-
           const steps = await prisma.steps.findFirst({
             where: {
               workflowId: findWorkflow.id,
-              status: status
-            }
-          })
+              status: status,
+            },
+          });
           if (!steps) {
             await tx.workflows.update({
               where: { id: findWorkflow.id },
               data: {
                 Steps: {
                   create: {
-                    status: status
-                  }
-                }
+                    status: status,
+                  },
+                },
               },
             });
           }
-
         }
       }
 
       return [updatedJob, connectList];
     });
 
-    return res
-      .status(200)
-      .json({ message: "Job updated successfully", job: updatedJob });
+    return res.status(200).json({ message: "Job updated successfully", job: updatedJob });
   } catch (error) {
     console.error("Error updating the job:", error);
     return res.status(500).json({
@@ -763,6 +761,7 @@ export const updateJob = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 
 
