@@ -22,6 +22,7 @@ import { updateInvoice } from "../controllers/invoices/update"
 import { createPlan, deletePlan, getPlan, getPlans, updatePlan } from "../controllers/subscription/plans/create"
 import { createSubscription, deleteSubscription, getSubscription, getSubscriptions, updateSubscription } from "../controllers/subscription"
 import { getJobWorkflow } from "../controllers/workflow"
+import { attendanceHistory, ClockIn, ClockOut, LunchBreak, LunchStart } from "../controllers/Attendance"
 
 
 
@@ -110,6 +111,15 @@ routes.get("/subscriptions", authenticateToken, getSubscriptions)
 routes.get("/:subscriptionId/subscription", authenticateToken, getSubscription)
 routes.delete("/:subscriptionId/subscription", authenticateToken, deleteSubscription)
 routes.patch("/:subscriptionId/subscription", authenticateToken, updateSubscription)
+
+
+
+// clock in
+routes.post("/clockin", authenticateToken, ClockIn)
+routes.post("/clockout", authenticateToken, ClockOut)
+routes.post("/lunchStart", authenticateToken, LunchStart)
+routes.post("/lunchbreak", authenticateToken, LunchBreak)
+routes.get("/:userId/attendances", authenticateToken, attendanceHistory)
 
 
 export default routes
