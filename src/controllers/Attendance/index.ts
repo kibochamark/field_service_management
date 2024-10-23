@@ -19,7 +19,7 @@ const lunchBreakSchema = Joi.object({
 
 
 const attendanceHistorySchema = Joi.object({
-    userid: Joi.string().required()
+    userId: Joi.string().required()
 })
 
 
@@ -97,7 +97,7 @@ export async function LunchStart(req: express.Request, res: express.Response, ne
                 id
             },
             data: {
-                lunchStart,
+                lunchStart:lunchStart,
                 status: "ONBREAK",
             }
         })
@@ -142,7 +142,7 @@ export async function LunchBreak(req: express.Request, res: express.Response, ne
                 id
             },
             data: {
-                lunchEnd,
+                lunchEnd:lunchEnd,
                 status: "ONLINE",
             }
         })
