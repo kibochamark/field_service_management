@@ -19,7 +19,7 @@ const lunchBreakSchema = Joi.object({
 
 
 const attendanceHistorySchema = Joi.object({
-    userid: Joi.string().required()
+    userId: Joi.string().required()
 })
 
 
@@ -56,7 +56,7 @@ export async function ClockOut(req: express.Request, res: express.Response, next
             }
         })
 
-        return res.status(200).json({
+        return res.status(201).json({
             message: "success",
             data: attendance
         })
@@ -97,7 +97,7 @@ export async function LunchStart(req: express.Request, res: express.Response, ne
                 id
             },
             data: {
-                lunchStart,
+                lunchStart:lunchStart,
                 status: "ONBREAK",
             }
         })
@@ -139,10 +139,10 @@ export async function LunchBreak(req: express.Request, res: express.Response, ne
 
         const attendance = await prisma.attendance.update({
             where: {
-                id
+                id:id
             },
             data: {
-                lunchEnd,
+                lunchEnd:lunchEnd,
                 status: "ONLINE",
             }
         })
@@ -171,6 +171,7 @@ export async function ClockIn(req: express.Request, res: express.Response, next:
             data: {
                 userid: user?.userId,
                 status: "ONLINE",
+                clockIn:req.body.date
             }
         })
 
