@@ -56,7 +56,7 @@ export async function ClockOut(req: express.Request, res: express.Response, next
             }
         })
 
-        return res.status(200).json({
+        return res.status(201).json({
             message: "success",
             data: attendance
         })
@@ -171,6 +171,7 @@ export async function ClockIn(req: express.Request, res: express.Response, next:
             data: {
                 userid: user?.userId,
                 status: "ONLINE",
+                clockIn:req.body.date
             }
         })
 
