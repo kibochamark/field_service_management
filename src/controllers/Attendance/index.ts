@@ -139,7 +139,7 @@ export async function LunchBreak(req: express.Request, res: express.Response, ne
 
         const attendance = await prisma.attendance.update({
             where: {
-                id
+                id:id
             },
             data: {
                 lunchEnd:lunchEnd,
