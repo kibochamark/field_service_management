@@ -22,6 +22,7 @@ import { updateInvoice } from "../controllers/invoices/update"
 import { createPlan, deletePlan, getPlan, getPlans, updatePlan } from "../controllers/subscription/plans/create"
 import { createSubscription, deleteSubscription, getSubscription, getSubscriptions, updateSubscription } from "../controllers/subscription"
 import { getJobWorkflow } from "../controllers/workflow"
+import { getDashboardMetrics} from "../controllers/dashboard"
 import { attendanceHistory, ClockIn, ClockOut, LunchBreak, LunchStart } from "../controllers/Attendance"
 
 
@@ -120,6 +121,9 @@ routes.post("/clockout", authenticateToken, ClockOut)
 routes.post("/lunchStart", authenticateToken, LunchStart)
 routes.post("/lunchbreak", authenticateToken, LunchBreak)
 routes.get("/:userId/attendances", authenticateToken, attendanceHistory)
+
+//dash
+routes.get("/:companyId/metrics", getDashboardMetrics);
 
 
 export default routes
