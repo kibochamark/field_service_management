@@ -23,6 +23,8 @@ import { createPlan, deletePlan, getPlan, getPlans, updatePlan } from "../contro
 import { createSubscription, deleteSubscription, getSubscription, getSubscriptions, updateSubscription } from "../controllers/subscription"
 import { getJobWorkflow } from "../controllers/workflow"
 import { getDashboardMetrics} from "../controllers/dashboard"
+import { attendanceHistory, ClockIn, ClockOut, LunchBreak, LunchStart } from "../controllers/Attendance"
+
 
 
 const routes= Router()
@@ -113,6 +115,12 @@ routes.patch("/:subscriptionId/subscription", authenticateToken, updateSubscript
 
 
 
-routes.get("/:companyId/metrics", getDashboardMetrics);
+// clock in
+routes.post("/clockin", authenticateToken, ClockIn)
+routes.post("/clockout", authenticateToken, ClockOut)
+routes.post("/lunchStart", authenticateToken, LunchStart)
+routes.post("/lunchbreak", authenticateToken, LunchBreak)
+routes.get("/:userId/attendances", authenticateToken, attendanceHistory)
+
 
 export default routes
