@@ -54,12 +54,36 @@ export const getDashboardMetrics = async (
       _sum: { totalAmount: true },
     });
 
+    // Get total clients
+    const totalClients = await prisma.client.count({
+      where: { companyId: companyId },
+    });
+
+    // Get pending (approved) invoices
+    const pendingInvoicesCount = await prisma.invoice.count({
+      where: {
+        companyId: companyId,
+        status: "APPROVED",
+      },
+    });
+
+    // Get count of jobs with status "ONGOING"
+    const ongoingJobsCount = await prisma.job.count({
+      where: {
+        companyId: companyId,
+        status: "ONGOING",
+      },
+    });
+
     res.status(200).json({
       totalEmployees,
       subscriptionStatus: subscription?.status || "Unknown",
       scheduledJobsCount,
       completedJobsCount,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
+      totalClients,
+      pendingInvoicesCount,
+      ongoingJobsCount,
     });
   } catch (error) {
     console.error("Error fetching dashboard metrics:", error);
