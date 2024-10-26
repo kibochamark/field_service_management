@@ -122,5 +122,8 @@ routes.post("/lunchStart", authenticateToken, LunchStart)
 routes.post("/lunchbreak", authenticateToken, LunchBreak)
 routes.get("/:userId/attendances", authenticateToken, attendanceHistory)
 
+//dash
+routes.get("/:companyId/metrics", getDashboardMetrics);
+
 
 export default routes
