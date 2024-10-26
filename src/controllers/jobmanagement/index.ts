@@ -770,7 +770,7 @@ const UpdateJobStatusSchema = Joi.object({
   status: Joi.string().valid("CREATED", "ACCEPTED",
     "ASSIGNED",
     "SCHEDULED",
-    "INPROGRESS",
+    "ONGOING",
     "COMPLETED",
     "CANCELLED").required()
 
