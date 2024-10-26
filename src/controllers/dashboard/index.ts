@@ -19,12 +19,11 @@ export const getDashboardMetrics = async (
       throw validationError;
     }
 
-    // Get total number of employees
+    // Other metric queries remain the same
     const totalEmployees = await prisma.user.count({
       where: { companyId: companyId },
     });
 
-    // Get subscription status
     const subscription = await prisma.subscription.findFirst({
       where: {
         Company: { some: { id: companyId } },
@@ -32,7 +31,6 @@ export const getDashboardMetrics = async (
       select: { status: true },
     });
 
-    // Get count of jobs with status "SCHEDULED"
     const scheduledJobsCount = await prisma.job.count({
       where: {
         companyId: companyId,
@@ -40,7 +38,6 @@ export const getDashboardMetrics = async (
       },
     });
 
-    // Get count of jobs with status "COMPLETED"
     const completedJobsCount = await prisma.job.count({
       where: {
         companyId: companyId,
@@ -48,11 +45,60 @@ export const getDashboardMetrics = async (
       },
     });
 
-    // Calculate total revenue from invoices
     const totalRevenue = await prisma.invoice.aggregate({
       where: { companyId: companyId },
       _sum: { totalAmount: true },
     });
+
+    const totalClients = await prisma.client.count({
+      where: { companyId: companyId },
+    });
+
+    const pendingInvoicesCount = await prisma.invoice.count({
+      where: {
+        companyId: companyId,
+        status: "APPROVED",
+      },
+    });
+
+    const ongoingJobsCount = await prisma.job.count({
+      where: {
+        companyId: companyId,
+        status: "ONGOING",
+      },
+    });
+
+    // Fetch recent jobs
+    const recentJobs = await prisma.job.findMany({
+      where: { companyId: companyId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: {
+        name: true,
+        status: true,
+        createdAt: true,
+        clients: { select: { firstName: true, lastName: true } },
+        technicians: {
+          select: {
+            technician: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format the recent jobs data for the response
+    const formattedRecentJobs = recentJobs.map(job => ({
+      jobName: job.name,
+      client: `${job.clients.firstName} ${job.clients.lastName}`,
+      status: job.status,
+      date: job.createdAt,
+      technician: job.technicians.map(t => `${t.technician.firstName} ${t.technician.lastName}`).join(", "),
+    }));
 
     res.status(200).json({
       totalEmployees,
@@ -60,6 +106,10 @@ export const getDashboardMetrics = async (
       scheduledJobsCount,
       completedJobsCount,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
+      totalClients,
+      pendingInvoicesCount,
+      ongoingJobsCount,
+      recentJobs: formattedRecentJobs,
     });
   } catch (error) {
     console.error("Error fetching dashboard metrics:", error);
@@ -68,3 +118,4 @@ export const getDashboardMetrics = async (
     next(serverError);
   }
 };
+
