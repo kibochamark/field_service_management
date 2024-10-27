@@ -238,7 +238,8 @@ model Invoice {
   totalAmount Float @default(0.00)
 
   dueDate   DateTime
-  issueDate DateTime @default(now())
+  issueDate DateTime  @default(now())
+  paidDate  DateTime?
 
   status InvoiceStatus @default(DRAFT)
 
