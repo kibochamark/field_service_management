@@ -96,7 +96,7 @@ routes.get("/:companyId/jobfeed", authenticateToken, getJobFeed);
 routes.post("/invoice", authenticateToken, createInvoice);
 routes.get("/:companyId/invoices", authenticateToken, getAllInvoices)
 routes.get("/:invoiceId/invoice", authenticateToken, getInvoice)
-routes.get("/invoicedata", authenticateToken, getDashboarddata)
+routes.get("/:companyid/invoicedata", authenticateToken, getDashboarddata)
 routes.delete("/:invoiceId/invoice", authenticateToken, deleteInvoice)
 routes.patch("/invoice", authenticateToken, updateInvoice)
 
