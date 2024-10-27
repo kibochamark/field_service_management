@@ -74,6 +74,7 @@ export async function updateInvoice(req: Request, res: Response, next: NextFunct
                     dueDate,
                     notes,
                     status,
+                    paidDate:status === "PAID" ? new Date() : ''
                 },
                 select: {
                     id: true,
