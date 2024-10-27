@@ -14,6 +14,8 @@ import prisma from "../../utils/prismaConfig";
 export async function getDashboarddata(req: Request, res: Response, next: NextFunction) {
     let statusError: GlobalError = new Error("")
 
+    const {companyid} = req.params
+
     try {
         const [formattedResult] = await prisma.$transaction(async (tx) => {
             const today = new Date()
@@ -24,7 +26,8 @@ export async function getDashboarddata(req: Request, res: Response, next: NextFu
                     status: "SENT",
                     dueDate: {
                         gt: today
-                    }
+                    },
+                    companyId:companyid
                 },
                 _sum: {
                     totalAmount: true
@@ -38,7 +41,9 @@ export async function getDashboarddata(req: Request, res: Response, next: NextFu
 
             const unpaidtotal = await tx.invoice.aggregate({
                 where: {
-                    status: "SENT"
+                    status: "SENT",
+                    companyId:companyid
+
                 },
                 _sum: {
                     totalAmount: true
@@ -46,7 +51,9 @@ export async function getDashboarddata(req: Request, res: Response, next: NextFu
             })
             const drafttotal = await tx.invoice.aggregate({
                 where: {
-                    status: "DRAFT"
+                    status: "DRAFT",
+                    companyId:companyid
+
                 },
                 _sum: {
                     totalAmount: true
@@ -55,7 +62,9 @@ export async function getDashboarddata(req: Request, res: Response, next: NextFu
 
             const averagedays = await tx.invoice.findMany({
                 where: {
-                    status: "PAID"
+                    status: "PAID",
+                    companyId:companyid
+
                 },
                 select: {
                     issueDate: true,
