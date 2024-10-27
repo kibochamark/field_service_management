@@ -24,6 +24,7 @@ import { createSubscription, deleteSubscription, getSubscription, getSubscriptio
 import { getJobWorkflow } from "../controllers/workflow"
 import { getDashboardMetrics} from "../controllers/dashboard"
 import { attendanceHistory, ClockIn, ClockOut, LunchBreak, LunchStart } from "../controllers/Attendance"
+import { getDashboarddata } from "../controllers/invoices/dashboard"
 
 
 
@@ -95,6 +96,7 @@ routes.get("/:companyId/jobfeed", authenticateToken, getJobFeed);
 routes.post("/invoice", authenticateToken, createInvoice);
 routes.get("/:companyId/invoices", authenticateToken, getAllInvoices)
 routes.get("/:invoiceId/invoice", authenticateToken, getInvoice)
+routes.get("/invoicedata", authenticateToken, getDashboarddata)
 routes.delete("/:invoiceId/invoice", authenticateToken, deleteInvoice)
 routes.patch("/invoice", authenticateToken, updateInvoice)
 
@@ -124,6 +126,9 @@ routes.get("/:userId/attendances", authenticateToken, attendanceHistory)
 
 //dash
 routes.get("/:companyId/metrics", getDashboardMetrics);
+
+
+
 
 
 export default routes

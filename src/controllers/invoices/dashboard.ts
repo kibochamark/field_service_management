@@ -1,7 +1,7 @@
 import { differenceInDays, formatDistance } from "date-fns";
 import { NextFunction, Request, Response } from "express";
-import { GlobalError } from "types/errorTypes";
-import prisma from "utils/prismaConfig";
+import { GlobalError } from "../../types/errorTypes";
+import prisma from "../../utils/prismaConfig";
 
 
 /**
