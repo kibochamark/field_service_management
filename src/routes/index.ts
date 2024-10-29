@@ -23,7 +23,7 @@ import { createPlan, deletePlan, getPlan, getPlans, updatePlan } from "../contro
 import { createSubscription, deleteSubscription, getSubscription, getSubscriptions, updateSubscription } from "../controllers/subscription"
 import { getJobWorkflow } from "../controllers/workflow"
 import { getDashboardMetrics} from "../controllers/dashboard"
-import { attendanceHistory, ClockIn, ClockOut, LunchBreak, LunchStart } from "../controllers/Attendance"
+import { attendanceHistory, ClockIn, ClockOut, getUserAttendance, LunchBreak, LunchStart } from "../controllers/Attendance"
 
 
 
@@ -121,6 +121,7 @@ routes.post("/clockout", authenticateToken, ClockOut)
 routes.post("/lunchStart", authenticateToken, LunchStart)
 routes.post("/lunchbreak", authenticateToken, LunchBreak)
 routes.get("/:userId/attendances", authenticateToken, attendanceHistory)
+routes.get("/:userId/attendance", authenticateToken, getUserAttendance)
 
 //dash
 routes.get("/:companyId/metrics", getDashboardMetrics);

@@ -226,3 +226,47 @@ export async function attendanceHistory(req: express.Request, res: express.Respo
 
     }
 }
+
+
+// Controller to retrieve attendance records for a specific user
+export const getUserAttendance = async (req: express.Request, res: express.Response, next: express.NextFunction)  => {
+  const userId = req.params.userId; // Assuming userId is passed as a URL parameter
+
+  try {
+    // Fetch user details along with attendance records
+    const userWithAttendance = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include: {
+        Attendance: {
+          select: {
+            createdAt: true,
+            clockIn: true,
+            lunchStart: true,
+            lunchEnd: true,
+            clockOut: true,
+          },
+        },
+      },
+    });
+
+    if (!userWithAttendance) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prepare response data
+    const responseData = {
+      name: userWithAttendance.firstName,
+      role: userWithAttendance.roleId,
+      attendanceRecords: userWithAttendance.Attendance,
+    };
+
+    return res.status(200).json(responseData);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
